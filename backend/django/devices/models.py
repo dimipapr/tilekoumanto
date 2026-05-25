@@ -17,6 +17,8 @@ class DeviceMessageRaw(models.Model):
 
     class Meta:
         ordering = ['-received_at']
+        verbose_name = "Device Message Raw"
+        verbose_name_plural = "Device Messages Raw"
 
     def __str__(self):
         return f"{self.device.uuid} @ {self.received_at}"
