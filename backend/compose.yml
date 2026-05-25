@@ -11,7 +11,7 @@ services:
       DNS_API_TOKEN: ${DNS_API_TOKEN}
     volumes:
       - ./caddy/etc/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./django/staticfiles:/app/staticfiles:ro
+      - static-volume:/app/staticfiles:ro
       - caddy-data:/data
       - caddy-config:/config
   mosquitto:
@@ -45,6 +45,7 @@ services:
     volumes:
       - ./django:/app:rw
       - ../certs/devices:/certs/devices:ro
+      - static-volume:/staticfiles
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -81,3 +82,4 @@ volumes:
   mosquitto-log:
   caddy-data:
   caddy-config:
+  static-volume:

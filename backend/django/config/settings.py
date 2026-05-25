@@ -87,5 +87,14 @@ USE_I18N = True
 USE_TZ = True
 
 
-STATIC_URL = 'static/'
-STATIC_ROOT = 'static/'
+# The URL to use when referring to static files (e.g., in templates)
+STATIC_URL = '/static/' 
+
+# The absolute directory where collectstatic will dump everything
+# Use /app/staticfiles to avoid clashing with your project source
+STATIC_ROOT = '/staticfiles' 
+
+#project static files
+STATICFILES_DIRS = [
+    '/app/static',
+]
