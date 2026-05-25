@@ -1,0 +1,18 @@
+dev.tilekoumanto.gr {
+    tls {
+        # Enforces the DNS-01 challenge using the token injected from .env
+        dns cloudflare {$DNS_API_TOKEN}
+    }
+
+    # Serve Django static files directly from the mounted volume
+    handle_path /static/* {
+        root * /app/staticfiles
+        file_server
+    }
+
+    # Serve gateway/health endpoint directly
+    respond /gateway/health `{"status":"OK"}` 200
+
+    # Proxy all other traffic to the Gunicorn application server
+    reverse_proxy django-web:8000
+}

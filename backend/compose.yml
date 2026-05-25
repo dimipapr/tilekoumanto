@@ -1,4 +1,19 @@
 services:
+  caddy:
+    build:
+      context: ./caddy
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DNS_API_TOKEN: ${DNS_API_TOKEN}
+    volumes:
+      - ./caddy/etc/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./django/staticfiles:/app/staticfiles:ro
+      - caddy-data:/data
+      - caddy-config:/config
   mosquitto:
     image: eclipse-mosquitto:2
     container_name: mosquitto
@@ -30,8 +45,6 @@ services:
     volumes:
       - ./django:/app:rw
       - ../certs/devices:/certs/devices:ro
-    ports:
-      - "8000:8000"
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -66,3 +79,5 @@ volumes:
   postgres-data:
   mosquitto-data:
   mosquitto-log:
+  caddy-data:
+  caddy-config:

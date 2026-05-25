@@ -5,6 +5,8 @@ SECRET_KEY = environ['DJANGO_SECRET_KEY']
 DEBUG = environ['DJANGO_DEBUG'].lower() == 'true'
 ALLOWED_HOSTS = environ['DJANGO_ALLOWED_HOSTS'].split(',')
 TIME_ZONE = 'Europe/Athens'
+CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS]
+SECURE_PROXY_SSK_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent

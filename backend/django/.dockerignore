@@ -1,0 +1,16 @@
+# Ignore generated static files
+static/
+
+# Ignore Python cache and local virtual environments
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+
+# Ignore secrets (they are passed via compose, not baked into the image)
+.env
+
+# Ignore Git history
+.git/
+.gitignore
