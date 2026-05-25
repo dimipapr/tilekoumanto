@@ -2,6 +2,7 @@ import os
 import subprocess
 import json
 import uuid
+import shutil
 
 def run_cmd(command):
     result = subprocess.run(command, capture_output=True, text=True)
@@ -16,8 +17,11 @@ def ensure_dir(directory):
 
 def generate_ca(output_dir, days):
     print("--- 1. Generating Root CA ---")
-    ca_key = os.path.join(output_dir, "ca.key")
-    ca_crt = os.path.join(output_dir, "ca.crt")
+    ca_dir = os.path.join(output_dir, "ca")
+    ensure_dir(ca_dir)
+    
+    ca_key = os.path.join(ca_dir, "ca.key")
+    ca_crt = os.path.join(ca_dir, "ca.crt")
     
     if os.path.exists(ca_key) and os.path.exists(ca_crt):
         print("CA already exists. Skipping.\n")
@@ -34,10 +38,16 @@ def generate_ca(output_dir, days):
 
 def generate_server_cert(output_dir, domain, days):
     print("--- 2. Generating Mosquitto Server Certificate ---")
-    server_key = os.path.join(output_dir, "server.key")
-    server_csr = os.path.join(output_dir, "server.csr")
-    server_crt = os.path.join(output_dir, "server.crt")
-    san_cnf = os.path.join(output_dir, "san.cnf")
+    mosquitto_dir = os.path.join(output_dir, "mosquitto")
+    ensure_dir(mosquitto_dir)
+    
+    server_key = os.path.join(mosquitto_dir, "server.key")
+    server_csr = os.path.join(mosquitto_dir, "server.csr")
+    server_crt = os.path.join(mosquitto_dir, "server.crt")
+    san_cnf = os.path.join(mosquitto_dir, "san.cnf")
+    
+    ca_key = os.path.join(output_dir, "ca", "ca.key")
+    ca_crt = os.path.join(output_dir, "ca", "ca.crt")
     
     if os.path.exists(server_crt):
         print("Server certificate already exists. Skipping.\n")
@@ -53,15 +63,18 @@ def generate_server_cert(output_dir, domain, days):
     
     run_cmd([
         "openssl", "x509", "-req", "-in", server_csr, 
-        "-CA", os.path.join(output_dir, "ca.crt"), 
-        "-CAkey", os.path.join(output_dir, "ca.key"), 
+        "-CA", ca_crt, 
+        "-CAkey", ca_key, 
         "-CAcreateserial", 
         "-out", server_crt, "-days", str(days), "-extfile", san_cnf
     ])
     
     os.remove(server_csr)
     os.remove(san_cnf)
-    print("Server certificate created successfully.\n")
+
+    # Bundle the CA cert into the mosquitto directory
+    shutil.copy2(ca_crt, os.path.join(mosquitto_dir, "ca.crt"))
+    print("Server certificate created and CA bundled successfully.\n")
 
 def generate_device_certs(output_dir, target_count, days):
     print(f"--- 3. Checking Device Certificates (Target: {target_count}) ---")
@@ -70,7 +83,6 @@ def generate_device_certs(output_dir, target_count, days):
     ensure_dir(devices_dir)
     manifest_path = os.path.join(devices_dir, "manifest.json")
 
-    # Load existing manifest
     if os.path.exists(manifest_path):
         with open(manifest_path, "r") as f:
             manifest = json.load(f)
@@ -80,15 +92,14 @@ def generate_device_certs(output_dir, target_count, days):
     current_count = len(manifest["devices"])
     needed = target_count - current_count
 
-    # Check if target is already met
     if needed <= 0:
         print(f"Target of {target_count} devices is already met (currently {current_count}). Skipping.\n")
         return
 
     print(f"Found {current_count} devices. Generating {needed} new certificates...")
 
-    ca_crt = os.path.join(output_dir, "ca.crt")
-    ca_key = os.path.join(output_dir, "ca.key")
+    ca_crt = os.path.join(output_dir, "ca", "ca.crt")
+    ca_key = os.path.join(output_dir, "ca", "ca.key")
 
     for i in range(needed):
         device_uuid = str(uuid.uuid4())
@@ -99,29 +110,25 @@ def generate_device_certs(output_dir, target_count, days):
         device_csr = os.path.join(device_dir, f"{device_uuid}.csr")
         device_crt = os.path.join(device_dir, f"{device_uuid}.crt")
 
-        # Generate Private Key
         run_cmd(["openssl", "genrsa", "-out", device_key, "2048"])
         
-        # Generate CSR
         subj = f"/C=GR/O=Tilekoumanto Devices/CN={device_uuid}"
         run_cmd(["openssl", "req", "-new", "-key", device_key, "-out", device_csr, "-subj", subj])
         
-        # Generate Certificate
         run_cmd([
             "openssl", "x509", "-req", "-in", device_csr, 
             "-CA", ca_crt, "-CAkey", ca_key, "-CAcreateserial", 
             "-out", device_crt, "-days", str(days)
         ])
         
-        # Cleanup CSR
         os.remove(device_csr)
+
+        # Bundle the CA cert into this specific device's directory
+        shutil.copy2(ca_crt, os.path.join(device_dir, "ca.crt"))
         
-        # Append the UUID string to the manifest array
         manifest["devices"].append(device_uuid)
-        
         print(f"Created: {device_uuid} ({i + 1}/{needed})")
 
-    # Save updated manifest
     with open(manifest_path, "w") as f:
         json.dump(manifest, f, indent=4)
     
