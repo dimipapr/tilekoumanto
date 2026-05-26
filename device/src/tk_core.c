@@ -53,7 +53,7 @@ void tk_core_tick(void){
     if (now - last_poll_time >= POLL_INTERVALS_MS){
         last_poll_time = now;
 
-        tk_telemetry_t current_state;
+        tk_telemetry_t current_state = {0};
 
         if (lock) lock();
         get_telemetry(&current_state);
