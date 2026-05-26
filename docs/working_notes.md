@@ -72,3 +72,37 @@ sudo docker compose exec django-web python manage.py load_manifest
 sudo docker compose exec django-web python manage.py mqtt_catcher
 
 ```
+
+
+
+### Firmware Architecture Specification
+
+#### 1. Hardware Target
+
+* **MCU:** STM32 (Development target: Nucleo board).
+* **Network Interface:** Cellular Modem via UART (AT Commands). Future expansion planned for Wi-Fi and LAN.
+* **Execution Environment:** FreeRTOS.
+#### 2. Software Abstraction Layer (HAL)
+
+The firmware strictly separates business logic from hardware dependencies to enable seamless testing and cross-platform compilation.
+
+* **Platform-Independent Core (`tile_core.c`):** Contains all operational logic, state management, and MQTT payload formatting. It has zero knowledge of the underlying OS or hardware.
+* **Hardware Abstraction Layer (`tile_hal.h`):** The defined contract of inputs/outputs the core requires.
+* **Platform-Specific Implementations:** Connects the HAL to the physical world (e.g., `hal_stm32.c` implementing GPIO reads and FreeRTOS mutexes).
+
+#### 3. Simulation & Testing Strategy (FFI Bridge)
+
+To validate both the firmware logic and the backend integration, the project utilizes a Foreign Function Interface (FFI) Python bridge.
+
+* The core logic (`tile_core.c`) is compiled as a shared library (`.so` / `.dll`).
+* A Python testing harness (`device/simulator.py`) loads the library using `ctypes`.
+* Python injects mock hardware functions into the C core, allowing the simulator to script complex physical environments (e.g., dropping water pressure) and network conditions while executing the exact C production logic.
+
+### Implementation Slice 1: Basic Telemetry Loop
+
+**Objective:** Establish the core timing and state-reporting loop in the hardware-agnostic architecture.
+
+**Behavioral Requirements:**
+* **Fast Loop (1 Hz):** The core must read the physical inputs (Mains Present, Relay Active) from the hardware layer once every second.
+* **Slow Loop (1/60 Hz):** The core must format and publish a JSON telemetry message every 60 seconds as a standard heartbeat.
+* **Event-Driven Update:** If the physical state changes during the 1 Hz polling intervals, the core must immediately publish the new state, overriding the 60-second heartbeat timer.
