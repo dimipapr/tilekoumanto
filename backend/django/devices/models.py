@@ -16,7 +16,7 @@ class DeviceMessageRaw(models.Model):
     received_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-received_at']
+        ordering = ['received_at']
         verbose_name = "Device Message Raw"
         verbose_name_plural = "Device Messages Raw"
 

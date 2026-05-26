@@ -36,7 +36,7 @@ class Command(BaseCommand):
                 
                 device_uuid = metadata.get("device_uuid")
                 timestamp_unix = metadata.get("timestamp")
-                dt = datetime.fromtimestamp(timestamp_unix, tz=timezone.utc)
+                dt = datetime.fromtimestamp(timestamp_unix/1000, tz=timezone.utc)
 
                 try:
                     device = Device.objects.get(uuid=device_uuid)

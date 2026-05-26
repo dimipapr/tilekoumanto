@@ -37,7 +37,7 @@ void tk_core_init(
 }
 
 #define POLL_INTERVALS_MS       100
-#define TELEMETRY_INTERVALS_MS  60000
+#define TELEMETRY_INTERVALS_MS  5000
 
 static uint64_t last_poll_time = 0;
 static uint64_t last_publish_time = 0;

@@ -106,3 +106,17 @@ To validate both the firmware logic and the backend integration, the project uti
 * **Fast Loop (1 Hz):** The core must read the physical inputs (Mains Present, Relay Active) from the hardware layer once every second.
 * **Slow Loop (1/60 Hz):** The core must format and publish a JSON telemetry message every 60 seconds as a standard heartbeat.
 * **Event-Driven Update:** If the physical state changes during the 1 Hz polling intervals, the core must immediately publish the new state, overriding the 60-second heartbeat timer.
+
+## Work Log: 2026-05-27
+- **Firmware Core (`tk_core.c`):**
+    - Completed basic telemetry loop: implemented 1 Hz polling, event-driven publishing, and 60s heartbeat logic.
+    - Synchronized `TkTelemetry` struct in C with Python bindings via `ctypes`; resolved memory access and initialization issues.
+    - Implemented HAL callbacks (telemetry, mqtt, time, lock, unlock) to bridge Python simulator to C logic.
+- **Simulator (`simulator.py`):**
+    - Integrated `paho-mqtt` with mTLS for production-grade secure transport.
+    - Implemented path resolution using `pathlib` for robust cross-platform file anchoring.
+    - Configured environment variables (UUID/Host) via system `os.environ` (manual injection).
+- **Integration & Debugging:**
+    - Verified end-to-end telemetry pipeline: Simulator → mTLS → Mosquitto → Django Catcher → PostgreSQL.
+    - Debugged Django ingestion: Corrected timestamp parsing logic (converted incoming milliseconds to seconds) to resolve date serialization errors.
+    - Validated FFI bridge: Confirmed accurate structural data transfer between Python memory space and C-core.

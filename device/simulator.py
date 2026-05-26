@@ -2,6 +2,8 @@ import ctypes
 import os
 import sys
 import time
+import paho.mqtt.client as mqtt
+from pathlib import Path
 
 lib_path = os.path.join(os.path.dirname(__file__), 'build', f'libtk_core.so')
 
@@ -10,6 +12,31 @@ try:
 except OSError as e:
     print(f"Failed to load library at {lib_path}.\n Error: {e}")
     sys.exit(1)
+
+
+
+MQTT_HOST = os.environ["MQTT_HOST"]
+MQTT_PORT = 8883
+DEVICE_UUID = os.environ["SIM_UUID"]
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+print(PROJECT_ROOT)
+lib_path = PROJECT_ROOT / 'device' / 'build' / 'libtk_core.so'
+CERTS_FOLDER = PROJECT_ROOT / "certs" / "devices" / DEVICE_UUID
+
+mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+print(str(CERTS_FOLDER / f"{DEVICE_UUID}.crt"))
+
+mqtt_client.tls_set(
+    ca_certs=str(CERTS_FOLDER / "ca.crt"),
+    certfile=str(CERTS_FOLDER / f"{DEVICE_UUID}.crt"),
+    keyfile=str(CERTS_FOLDER / f"{DEVICE_UUID}.key"),
+)
+print(f"Connecting to MQTT broker at {MQTT_HOST}...")
+mqtt_client.connect(MQTT_HOST, MQTT_PORT, 60)
+mqtt_client.loop_start()
+
+
 
 #mirror the c struct
 class TkTelemetry(ctypes.Structure):
@@ -27,11 +54,14 @@ UNLOCK_CB = ctypes.CFUNCTYPE(None)
 
 #implement python mock functions
 def get_telemetry(state_ptr):
-    state_ptr.contents.main_present = True
-    state_ptr.contents.relay_actuve = False
+    state_ptr.contents.mains_present = True
+    state_ptr.contents.relay_active = False
 
 def mqtt_publish(topic, payload):
-    print(f"[MQTT OUT] {topic.decode('utf-8')}->{payload.decode('utf-8')}")
+    t = topic.decode('utf-8')
+    p = payload.decode('utf-8')
+    print(f"[MQTT OUT] {t} - >  {p}")
+    mqtt_client.publish(t,p)
 
 def get_unix_time():
     #return in miliseconds to match C logic
@@ -57,7 +87,7 @@ tk_core.tk_core_init.argtypes = [
 ]
 
 tk_core.tk_core_init(
-    b"sim-device-1234",
+    DEVICE_UUID.encode('utf-8'),
     cb_telemetry,
     cb_publish,
     cb_time,
@@ -67,7 +97,7 @@ tk_core.tk_core_init(
 
 print("Simulator initialized. Running tick loop...")
 
-tk_core.tk_core_tick.sertype = None
+tk_core.tk_core_tick.restype = None
 tk_core.tk_core_tick.argtypes = []
 
 try:
