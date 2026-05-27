@@ -149,3 +149,25 @@ void tk_core_init(
 void tk_core_stop(void){
     // vPortEndScheduler();
 }
+
+#if defined(PLATFORM_EMBEDDED)
+/**
+ * Required by the STM32 startup assembly code to initialize 
+ * low-level hardware microcontroller system clocks.
+ */
+void SystemInit(void) {
+    // For now, keep it empty to let the chip boot into its default internal RC oscillator (16 MHz)
+}
+
+/**
+ * Hardware execution entry point called by Reset_Handler
+ */
+int main(void) {
+    // Your hardware initialization and FreeRTOS task startup logic will go here
+    
+    // Fallback infinite loop to prevent main from returning
+    while(1) {
+    }
+    return 0;
+}
+#endif
