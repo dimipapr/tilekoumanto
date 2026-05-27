@@ -205,3 +205,5 @@ refactor: integrate static FreeRTOS kernel and update python simulator
 - Configure CMake to export compile commands for seamless VS Code IntelliSense integration.
 
 ### Next target, use cmake variables and preproccessor guards for the tk_core to be able to cross compile for linux and stm32
+-> done the toolchain
+-> TODO : review the code and check where we need compile guards
