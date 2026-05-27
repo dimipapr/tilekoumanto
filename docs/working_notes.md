@@ -192,3 +192,16 @@ We will introduce a single FreeRTOS worker task (`vLogicTask`) that replaces the
 ---
 
 This defines the exact scope of what we want to build right now. Do you accept this target definition, or should we adjust the mechanics before moving to the compilation setup?
+
+### 27/5
+refactor: integrate static FreeRTOS kernel and update python simulator
+
+- Migrate token core execution model from a manual tick loop to a fully static FreeRTOS scheduler.
+- Resolve internal kernel dependencies by introducing portable, mpu_wrappers, and deprecated_definitions headers.
+- Update vApplicationGetIdleTaskMemory signature to match configSTACK_DEPTH_TYPE.
+- Refactor simulator.py to spin up the blocking C engine inside a dedicated background thread.
+- Leverage python-dotenv to load simulation environments (.env) directly from the device folder.
+- Implement tk_core_stop and vApplicationIdleHook to handle graceful process teardown (preventing SIGSEGV on Ctrl+C) and throttle host CPU utilization down to <1%.
+- Configure CMake to export compile commands for seamless VS Code IntelliSense integration.
+
+### Next target, use cmake variables and preproccessor guards for the tk_core to be able to cross compile for linux and stm32

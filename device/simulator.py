@@ -138,4 +138,9 @@ try:
         time.sleep(1)
 except KeyboardInterrupt:
     print("Exiting simulator.")
-    tk_core.tk_core_stop()
+    # tk_core.tk_core_stop()
+
+    mqtt_client.loop_stop()
+    mqtt_client.disconnect()
+
+    os._exit(0)

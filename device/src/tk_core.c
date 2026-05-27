@@ -144,7 +144,8 @@ void tk_core_init(
     //start freertos scheduler and hand off control
     vTaskStartScheduler();
 }
+// void vPortEndScheduler(void);
 
 void tk_core_stop(void){
-    exit(0);
+    // vPortEndScheduler();
 }
