@@ -2,6 +2,7 @@ import ctypes
 import os
 import sys
 import time
+import threading
 import paho.mqtt.client as mqtt
 from pathlib import Path
 
@@ -80,8 +81,40 @@ cb_time = GET_UNIX_TIME_CB(get_unix_time)
 cb_lock = LOCK_CB(lock)
 cb_unlock = UNLOCK_CB(unlock)
 
-# Initialize Core
+#wire stop function
+tk_core.tk_core_stop.argtypes = []
+tk_core.tk_core_stop.restype = None
 
+def run_rtos_engine():
+    print("[Simulator] Booting FreeRTOS scheduler inside background thread ...")
+
+    tk_core.tk_core_init(
+        DEVICE_UUID.encode('utf-8'),
+        cb_telemetry,
+        cb_publish,
+        cb_time,
+        cb_lock,
+        cb_unlock,
+    )
+
+#instantiate and start the thread managing the C engine
+#use daemon=True to kill thread with Ctrl+C
+rtos_thread = threading.Thread(target=run_rtos_engine, daemon=False)
+rtos_thread.start()
+
+print("Simulator initialized and running. Press Ctrl+C to exit.")
+
+#Keep the main python thread awake so the proccess stays alive??
+#Why is that?
+
+try:
+    while True:
+        time.sleep(0.1)
+except KeyboardInterrupt:
+    print("\nExiting Simulator.")
+
+# Initialize Core
+tk_core.tk_core_init.restype = None
 tk_core.tk_core_init.argtypes = [
     ctypes.c_char_p, GET_TELEMETRY_CB, MQTT_PUBLISH_CB, GET_UNIX_TIME_CB, LOCK_CB, UNLOCK_CB
 ]
@@ -102,7 +135,7 @@ tk_core.tk_core_tick.argtypes = []
 
 try:
     while True:
-        tk_core.tk_core_tick()
-        time.sleep(0.01)
+        time.sleep(1)
 except KeyboardInterrupt:
     print("Exiting simulator.")
+    tk_core.tk_core_stop()

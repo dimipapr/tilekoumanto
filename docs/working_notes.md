@@ -120,3 +120,75 @@ To validate both the firmware logic and the backend integration, the project uti
     - Verified end-to-end telemetry pipeline: Simulator → mTLS → Mosquitto → Django Catcher → PostgreSQL.
     - Debugged Django ingestion: Corrected timestamp parsing logic (converted incoming milliseconds to seconds) to resolve date serialization errors.
     - Validated FFI bridge: Confirmed accurate structural data transfer between Python memory space and C-core.
+
+## Firmware Architectural Blueprint
+
+We are building a production-grade, asynchronous embedded core inside a Linux simulation environment before moving to physical STM32 hardware.
+
+### 1. The Tech Stack
+
+* **Core:** Pure C (`libtk_core.so`) compiled via CMake with a strict **Debug Profile** (`-g -O0`).
+* **OS Engine:** FreeRTOS POSIX port (running on Linux pthreads) with a hard-capped static heap size of **128 KB**.
+* **Test Harness:** Python script communicating with the C core via `ctypes` FFI.
+* **Backend:** Django Catcher syncing data to a PostgreSQL ledger via Mosquitto MQTT.
+
+### 2. The State Pattern (Anti-Over-Engineering)
+
+We rejected complex, event-driven queues because they are fragile during boot cycles and prone to flooding. Instead, we chose a **Hybrid Absolute-State Loop**:
+
+* **The Shared Basket:** A single, mutex-protected C struct holds the absolute truth of the physical pins (e.g., `mains_present = true`).
+* **The Input (Python):** The simulator updates the basket via FFI and triggers a lightweight, non-blocking **Task Notification** (`xTaskNotifyGive`).
+* **The Processor (FreeRTOS Task):** The main logic task sleeps at **0% CPU** until notified. It wakes up instantly, copies the basket, and runs the state machine.
+* **The Safety Heartbeat:** If no input happens for say 5 seconds, the task wakes up anyway to verify the state, ensuring the system self-heals if it boots up weirdly.
+
+---
+
+## Current Workspace Layout
+
+```text
+tilekoumanto/
+├── backend/               # Django + Postgres stack (Debug logging enabled)
+└── device/
+    ├── src/
+    │   ├── tk_core.c      # Production business logic (Hybrid loop lives here)
+    │   └── tk_hal.h       # Hardware interface contract
+    ├── third_party/
+    │   └── FreeRTOS/      # FreeRTOS source + POSIX port
+    └── CMakeLists.txt     # Build engine (Configured for Debug profile)
+
+```
+
+We are completely decoupled. The main execution loops never block on slow disk or network I/O.
+
+Ready to pull down the FreeRTOS dependencies and write the config file? Give the word and we take the first step.
+
+
+Our immediate objective is to transition from this single-threaded, time-delta dependent polling model into a multi-threaded, deterministic RTOS core on Linux, without changing the core business logic or the output payload format.
+
+Let's define the explicit target state for this slice:
+
+---
+
+## The Target Operational Slice
+
+### 1. Architectural Pivot
+
+* Eliminate `tk_core_tick()` entirely. Control of execution will be handed over to the FreeRTOS scheduler permanently via a new startup entry point (e.g., `tk_core_start()`).
+* Replace host-driven loop slicing with native FreeRTOS context switching managed by the Linux POSIX pthread portable layer.
+
+### 2. Thread-Safe Shared State
+
+* Eliminate the use of external, host-provided `lock()` and `unlock()` callbacks for data fetching.
+* The FFI layer (Python) will inject state directly into an internal, static C struct protected by a native FreeRTOS Mutex.
+
+### 3. The Hybrid Processing Loop (Single Task)
+
+We will introduce a single FreeRTOS worker task (`vLogicTask`) that replaces the current time-arithmetic logic with a hybrid state-notification + timeout loop:
+
+* **The Notification Path:** The task blocks completely at **0% CPU** utilizing `ulTaskNotifyTake()`. When Python updates the telemetry via an FFI callback, it signals this task to wake up and process the changes immediately.
+* **The Heartbeat Path:** The task blocker uses a strict maximum timeout of **5000ms**. If no state updates occur within 5 seconds, the timeout expires, forcing the task to wake up and execute a mandatory telemetry sync.
+* **The Output Condition:** The task compares the current state against the cached `last_published_state`. It formats and fires the identical JSON string via `mqtt_publish()` **only** if a physical pin value has flipped OR the 5-second safety timeout has been hit.
+
+---
+
+This defines the exact scope of what we want to build right now. Do you accept this target definition, or should we adjust the mechanics before moving to the compilation setup?

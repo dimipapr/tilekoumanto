@@ -1,8 +1,13 @@
 #include "tk_hal.h"
+#include "FreeRTOS.h"
+#include "task.h"
+
 #include <string.h>
-#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <inttypes.h>
+#include <stdbool.h>
+#include <unistd.h>
 
 // Internal State and callbacks
 
@@ -16,6 +21,88 @@ static hal_get_unix_time_cb get_unix_time = NULL;
 static hal_lock_cb lock = NULL;
 static hal_unlock_cb unlock = NULL;
 
+#define POLL_INTERVAL_MS 100
+#define TELEMETRY_INTERVAL_MS 5000
+
+static tk_telemetry_t last_published_state = {0};
+
+//FreeRTOS Static Allocation Memory Blocks
+static StaticTask_t xLogicTaskBuffer;
+#define LOGIC_TASK_STACK_SIZE 2048
+static StackType_t uxLogicTaskStack[LOGIC_TASK_STACK_SIZE];
+
+/*
+ * Mandatory Kernel Hook.
+ * FreeRTOS demands this when configSUPPORT_STATIC_ALLOCATION is 1.
+ * It provides the static memory buffers required to run the internal Idle Task.
+ */
+
+void vApplicationGetIdleTaskMemory(
+    StaticTask_t **ppxIdleTaskTCBBuffer,
+    StackType_t **ppxIdleTaskStackBuffer,
+    configSTACK_DEPTH_TYPE *puxIdleTaskStackSize
+){
+    static StaticTask_t xIdleTaskTCB;
+    static StackType_t uxIdleTaskStack[configMINIMAL_STACK_SIZE];
+
+    *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
+    *ppxIdleTaskStackBuffer = uxIdleTaskStack;
+    *puxIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+}
+
+void vApplicationIdleHook(void){
+    usleep(1000);
+}
+
+//core proccessing loop
+
+static void vLogicTask(void *pvParameters){
+    (void)pvParameters;
+
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+
+    const TickType_t xPollFrequency = pdMS_TO_TICKS(POLL_INTERVAL_MS);
+    const TickType_t xTelemetryTimeout = pdMS_TO_TICKS(TELEMETRY_INTERVAL_MS);
+    
+    TickType_t xLastPublishTime = xTaskGetTickCount();
+    
+    while(1){
+        vTaskDelayUntil(&xLastWakeTime, xPollFrequency);
+
+        tk_telemetry_t current_state = {0};
+
+        if (lock) lock();
+        get_telemetry(&current_state);
+        if (unlock) unlock();
+
+        bool state_changed = (current_state.relay_active != last_published_state.relay_active) ||
+                                (current_state.mains_present != last_published_state.mains_present);
+
+        //check for timeout
+        TickType_t xCurrentTime = xTaskGetTickCount();
+        bool timeout_reached = (xCurrentTime - xLastPublishTime) >= xTelemetryTimeout;
+
+        if (state_changed || timeout_reached){//publish telemetry decision
+            uint64_t epoch_time = get_unix_time();
+
+            snprintf(
+                mqtt_payload,
+                sizeof(mqtt_payload),
+                "{\"metadata\":{\"device_uuid\":\"%s\",\"timestamp\":%"PRIu64"},"
+                "\"payload\":{\"mains_present\":%s,\"relay_active\":%s}}",
+                device_uuid, 
+                epoch_time, 
+                current_state.mains_present ? "true" : "false", 
+                current_state.relay_active ? "true" : "false"
+            );
+            mqtt_publish(topic, mqtt_payload);
+
+            last_published_state = current_state;
+            xLastPublishTime = xCurrentTime;
+        }
+    }
+}
+
 void tk_core_init(
     const char *_uuid,
     hal_get_telemetry_cb tel_cb,
@@ -24,59 +111,40 @@ void tk_core_init(
     hal_lock_cb lock_cb,
     hal_unlock_cb unlock_cb
 ){
-    if (_uuid) {
-        strncpy(device_uuid, _uuid, sizeof(device_uuid) - 1);
-        device_uuid[sizeof(device_uuid) - 1] = '\0';
+    if (!_uuid || !tel_cb || !pub_cb || !time_cb) {
+        // Halt right here. Do not let FreeRTOS start up.
+        while (1) {
+            // Trap here if a function pointer is missing.
+            //TODO On physical STM32, turn on an error LED here
+        }
     }
     get_telemetry = tel_cb;
     mqtt_publish = pub_cb;
     get_unix_time = time_cb;
     lock = lock_cb;
     unlock = unlock_cb;
+
+    strncpy(device_uuid, _uuid, sizeof(device_uuid)-1);
+    device_uuid[sizeof(device_uuid) - 1] = '\0';
+
     snprintf(topic, sizeof(topic), "devices/%s/pump/telemetry", device_uuid);
+
+    //initialize the task workspace
+
+    xTaskCreateStatic(
+        vLogicTask,
+        "LogicTask",
+        LOGIC_TASK_STACK_SIZE,
+        NULL,
+        tskIDLE_PRIORITY +1,
+        uxLogicTaskStack,
+        &xLogicTaskBuffer
+    );
+
+    //start freertos scheduler and hand off control
+    vTaskStartScheduler();
 }
 
-#define POLL_INTERVALS_MS       100
-#define TELEMETRY_INTERVALS_MS  5000
-
-static uint64_t last_poll_time = 0;
-static uint64_t last_publish_time = 0;
-static tk_telemetry_t last_published_state = {0};
-
-void tk_core_tick(void){
-    //ensure required callbacks exist
-    if (!get_unix_time || !get_telemetry)return;
-
-    uint64_t now = get_unix_time();
-
-    // Fast loop
-    if (now - last_poll_time >= POLL_INTERVALS_MS){
-        last_poll_time = now;
-
-        tk_telemetry_t current_state = {0};
-
-        if (lock) lock();
-        get_telemetry(&current_state);
-        if (unlock) unlock();
-        bool state_changed = (current_state.relay_active != last_published_state.relay_active) || 
-                             (current_state.mains_present != last_published_state.mains_present);
-        if ( state_changed || now - last_publish_time >= TELEMETRY_INTERVALS_MS ){
-            snprintf(
-                mqtt_payload,
-                sizeof(mqtt_payload),
-                "{\"metadata\":{\"device_uuid\":\"%s\",\"timestamp\":%"PRIu64"},"
-                "\"payload\":{\"mains_present\":%s,\"relay_active\":%s}}",
-                device_uuid, 
-                now, 
-                current_state.mains_present ? "true" : "false", 
-                current_state.relay_active ? "true" : "false"
-            );
-            mqtt_publish(topic, mqtt_payload);
-            last_published_state.mains_present = current_state.mains_present;
-            last_published_state.relay_active = current_state.relay_active;
-            last_publish_time = now;
-        }
-    }
-    return;
+void tk_core_stop(void){
+    exit(0);
 }
-

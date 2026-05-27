@@ -29,6 +29,6 @@ void tk_core_init(
     hal_unlock_cb unlock_cb
 );
 
-void tk_core_tick(void);
+void tk_core_stop(void);
 
 #endif // TK_HAL_H
