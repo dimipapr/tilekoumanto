@@ -6,13 +6,6 @@ import threading
 import paho.mqtt.client as mqtt
 from pathlib import Path
 
-lib_path = os.path.join(os.path.dirname(__file__), 'build', f'libtk_core.so')
-
-try:
-    tk_core = ctypes.CDLL(lib_path)
-except OSError as e:
-    print(f"Failed to load library at {lib_path}.\n Error: {e}")
-    sys.exit(1)
 
 
 
@@ -22,8 +15,15 @@ DEVICE_UUID = os.environ["SIM_UUID"]
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 print(PROJECT_ROOT)
-lib_path = PROJECT_ROOT / 'device' / 'build' / 'libtk_core.so'
+lib_path = PROJECT_ROOT / 'device' / 'build_simulator' / 'libtk_core.so'
 CERTS_FOLDER = PROJECT_ROOT / "certs" / "devices" / DEVICE_UUID
+
+try:
+    tk_core = ctypes.CDLL(lib_path)
+except OSError as e:
+    print(f"Failed to load library at {lib_path}.\n Error: {e}")
+    sys.exit(1)
+
 
 mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 print(str(CERTS_FOLDER / f"{DEVICE_UUID}.crt"))

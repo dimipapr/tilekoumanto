@@ -36,7 +36,7 @@
 #define INCLUDE_uxTaskGetStackHighWaterMark     1
 #define INCLUDE_xTaskGetSchedulerState          1
 
-#if defined(PLATFORM_EMBEDDED)
+#if defined(PLATFORM_STM32)
     /* Cortex-M specific definitions. */
     #define configPRIO_BITS                       4        /* STM32F4xx uses 4 priority bits */
 

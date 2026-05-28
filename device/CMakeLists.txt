@@ -27,14 +27,15 @@ set(CORE_INCLUDES
 )
 
 # Platform-Specific Branching Logic
-if(TARGET_PLATFORM STREQUAL "EMBEDDED")
-    message(STATUS "Configuring build for NUCLEO-F446RE EMBEDDED target")
-    add_compile_definitions(PLATFORM_EMBEDDED=1)
+if(TARGET_PLATFORM STREQUAL "PLATFORM_STM32")
+    message(STATUS "Configuring build for NUCLEO-F446RE STM32 target")
+    add_compile_definitions(PLATFORM_STM32=1)
     
     # Append ARM Cortex-M4F hardware architecture port files
     list(APPEND CORE_SOURCES
         third_party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c
         targets/stm32/startup/startup_stm32f446xx.S
+        targets/stm32/Core/Src/main.c
     )
     
     # Append ARM Cortex-M4F include path
@@ -71,6 +72,7 @@ else()
     list(APPEND CORE_SOURCES
         third_party/FreeRTOS/Source/portable/ThirdParty/GCC/Posix/port.c
         third_party/FreeRTOS/Source/portable/ThirdParty/GCC/Posix/utils/wait_for_event.c
+        targets/simulator/src/sim_hooks.c
     )
     
     # Append Linux-specific FreeRTOS includes
