@@ -207,3 +207,18 @@ refactor: integrate static FreeRTOS kernel and update python simulator
 ### Next target, use cmake variables and preproccessor guards for the tk_core to be able to cross compile for linux and stm32
 -> done the toolchain
 -> TODO : review the code and check where we need compile guards
+
+### generale
+Project: IoT irrigation pump monitor/control. STM32/FreeRTOS firmware → MQTT mTLS → Django/PostgreSQL backend.
+Current state: Walking skeleton working end-to-end. Minimal HAL — mains and relay only. Simulator running tk_core via FFI.
+
+next steps in order:
+
+Compile guards — fix #include <unistd.h> in tk_core.c, consistent PLATFORM_LINUX/PLATFORM_STM32 split, inline not separate files yet
+Expand signals — pressure first, one at a time
+Non-blocking logger — HAL-injected, platform-split, debug/prod build axis
+Shallow FSM — three states (IDLE, RUNNING, FAULT), reason code enum, catchall FAULT_UNKNOWN
+Fuzzer — Python loop via FFI, assert invariants especially no self-recovery from fault
+Pre-commit hook — runs fuzzer + both-target compile check
+
+Deferred: CI, sim architecture split, frontend, auth, remote control, comms FSM.
