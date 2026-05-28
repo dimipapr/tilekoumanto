@@ -215,10 +215,11 @@ Current state: Walking skeleton working end-to-end. Minimal HAL — mains and re
 next steps in order:
 
 Compile guards — fix #include <unistd.h> in tk_core.c, consistent PLATFORM_LINUX/PLATFORM_STM32 split, inline not separate files yet
-Expand signals — pressure first, one at a time
 Non-blocking logger — HAL-injected, platform-split, debug/prod build axis
 Shallow FSM — three states (IDLE, RUNNING, FAULT), reason code enum, catchall FAULT_UNKNOWN
 Fuzzer — Python loop via FFI, assert invariants especially no self-recovery from fault
 Pre-commit hook — runs fuzzer + both-target compile check
 
 Deferred: CI, sim architecture split, frontend, auth, remote control, comms FSM.
+
+### blinky
