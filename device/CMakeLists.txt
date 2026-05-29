@@ -62,7 +62,7 @@ if(TARGET_PLATFORM STREQUAL "PLATFORM_STM32")
 
 # Simulator Specific Logic
 else()
-    add_library(tk_core SHARED ${CORE_SOURCES})
+    # Append the simulator specific source files before add_library
     list(APPEND CORE_SOURCES
         third_party/FreeRTOS/Source/portable/ThirdParty/GCC/Posix/port.c
         third_party/FreeRTOS/Source/portable/ThirdParty/GCC/Posix/utils/wait_for_event.c
@@ -73,6 +73,8 @@ else()
         third_party/FreeRTOS/Source/portable/ThirdParty/GCC/Posix/utils
     )
     add_compile_definitions(PLATFORM_SIMULATOR=1)
+    
+    add_library(tk_core SHARED ${CORE_SOURCES})
     target_link_libraries(tk_core PRIVATE pthread rt)
 endif()
 
