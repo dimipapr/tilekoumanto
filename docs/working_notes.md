@@ -222,4 +222,50 @@ Pre-commit hook — runs fuzzer + both-target compile check
 
 Deferred: CI, sim architecture split, frontend, auth, remote control, comms FSM.
 
-### blinky
+
+Here’s a concise note you can paste into `docs/working_notes.md`:
+
+## Firmware architecture direction
+
+The simulator should be as close to the real device firmware as practical.
+
+FreeRTOS is considered part of the shared device firmware runtime, not just an STM32 detail. The goal is to share the same task graph, timing assumptions, queues/timers, services, and firmware orchestration between STM32 and simulator builds where possible.
+
+The key boundary is:
+
+- shared firmware behavior
+- target-specific physical reality
+
+Proposed structure:
+
+```text
+device/
+├── logic/
+│   └── pure pump/device decision logic
+├── firmware/
+│   └── shared FreeRTOS runtime, tasks, services, queues, timers
+├── platform/
+│   ├── stm32/
+│   │   hardware GPIO, clocks, network/TLS/MQTT, storage, logging
+│   └── sim/
+│       simulated GPIO, Linux/sim network/TLS/MQTT, fake inputs, logging
+└── app/
+    ├── stm32/
+    │   board startup and scheduler start
+    └── sim/
+        simulator startup and scheduler start
+````
+
+The pure logic layer should still avoid FreeRTOS, MQTT, JSON, STM32 headers, dynamic allocation, blocking, and hardware access. It exists so pump rules remain deterministic and easy to test.
+
+The firmware layer may depend on FreeRTOS and is intended to be shared between STM32 and simulator builds.
+
+Python, if used, should act as an external harness/control surface around the simulator, not as the main firmware loop.
+
+Current direction:
+
+1. Rename the small pure module away from `tk_core` if needed, e.g. `tk_pump_logic`.
+2. Keep pump rules in `logic/`.
+3. Build shared FreeRTOS device behavior in `firmware/`.
+4. Keep STM32 and simulator differences behind `platform/`.
+5. Let `app/` wire and start each target.

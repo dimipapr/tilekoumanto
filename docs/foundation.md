@@ -151,22 +151,312 @@ The system retains an auditable history for troubleshooting and operational revi
 
 ### 5.1 MVP Goal
 
-A provisioned, authenticated device can securely send field readings to the backend; the backend validates, stores, and exposes those readings; and a user can securely view the current device state over HTTPS.
+The MVP proves the secure monitoring path end to end.
 
-### 5.2 MVP Scope (Included)
+A provisioned device can authenticate with the MQTT broker using its device certificate, publish field telemetry over MQTT/mTLS, and have that telemetry validated, stored, and exposed by the backend.
 
-* **Device Provisioning:** Device identity.
-* **Secure Device Communication:** MQTT over mTLS, device certificate identity validation, broker-side authentication, backend message validation.
-* **Secure User Communication:** HTTPS via Caddy.
-* **Telemetry Ingestion:** Main relay state, mains presence, device timestamp.
-* **Backend Source of Truth:** Latest known device state, last seen time, validation results.
-* **User Monitoring View:** Device status (online/offline/stale), last update time, mains presence, main relay active state.
+A user can view the latest accepted device state over HTTPS.
 
-### 5.3 MVP Scope (Excluded)
+For MVP, user-facing security means HTTPS transport security only. User authentication, session security, authorization checks, RBAC, and user-device assignment are intentionally excluded.
 
-* User authentication, session security, and authorization checks.
-* Role-Based Access Control (RBAC) and user-device assignment.
-* Remote control (Start/Stop commands, queues, retries).
-* Edge automation and alerting.
-* Advanced analytics and historical data views.
-* Pressure and detailed electrical telemetry (voltage/current).
+The MVP device is a secure telemetry publisher, not a remote controller.
+
+---
+
+### 5.2 MVP Scope: Included
+
+#### Device Provisioning
+
+The system supports provisioned device identity.
+
+A device has:
+
+* a stable device identity
+* device credentials
+* a backend-recognized device record or manifest entry
+
+The device does not authenticate as a human user.
+
+---
+
+#### Secure Device Communication
+
+The device communicates with the system using MQTT over mTLS.
+
+The MVP includes:
+
+* device certificate identity
+* broker-side mTLS authentication
+* broker-side authorization/ACLs
+* MQTT telemetry publishing
+* backend-side message validation
+
+The backend must only accept telemetry from known and valid device identities.
+
+Device identity is derived from the authenticated MQTT/mTLS connection, broker authorization, and topic context. The telemetry payload does not self-declare device identity.
+
+---
+
+#### Secure User Transport
+
+The user-facing monitoring view is served over HTTPS via Caddy.
+
+For MVP, HTTPS protects transport between the user and the backend.
+
+The MVP does not include user login, sessions, authorization rules, or per-user device access control.
+
+---
+
+#### Telemetry Ingestion
+
+The device publishes field telemetry.
+
+MVP telemetry includes:
+
+```text
+device_unix_time_ms
+mains_present
+pump_relay_active
+```
+
+`device_unix_time_ms` means the device-provided Unix time, in milliseconds, at the moment the telemetry sample was created.
+
+`mains_present` means the device observes that mains power is present at the monitored point.
+
+`pump_relay_active` means the device observes that the monitored pump relay/contact signal is active.
+
+The backend must treat payload values as reported observations from the device.
+
+---
+
+#### Backend Latest-State Store
+
+The backend validates accepted telemetry and stores the latest known state for each device.
+
+The backend stores or derives:
+
+```text
+latest mains_present value
+latest pump_relay_active value
+device_unix_time_ms
+received_at_unix_time_ms
+last_seen_unix_time_ms
+validation result/status
+offline status
+```
+
+The backend is the source of record for accepted telemetry and derived monitoring status.
+
+The backend must not invent physical state that was not reported by the device.
+
+---
+
+#### User Monitoring View
+
+The user can view the current monitoring state of the device.
+
+The MVP view shows:
+
+```text
+device status: online / offline
+last update time
+mains presence
+pump relay active state
+```
+
+`online`, and `offline`, are backend-derived monitoring statuses based on accepted telemetry and last-seen time.
+
+They are not physical signals directly published by the device.
+
+---
+
+### 5.3 MVP Scope: Excluded
+
+The following are intentionally excluded from the MVP:
+
+* user authentication
+* session security
+* authorization checks
+* Role-Based Access Control (RBAC)
+* user-device assignment
+* remote control
+* Start/Stop commands
+* command queues
+* command retries
+* command acknowledgements
+* edge automation
+* alerting
+* advanced analytics
+* historical data views
+* pressure telemetry
+* detailed electrical telemetry such as voltage/current
+
+These are important future capabilities, but they are not part of the first secure monitoring proof.
+
+---
+
+### 5.4 MVP Device Responsibilities
+
+For MVP, the device is responsible for:
+
+* holding a provisioned device identity
+* connecting to MQTT using mTLS
+* publishing telemetry under its authenticated device identity
+* observing mains presence
+* observing pump relay/contact active state
+* providing `device_unix_time_ms`
+* publishing telemetry on first observation
+* publishing telemetry when observed values change
+* publishing heartbeat telemetry when values do not change
+
+The device is not responsible for:
+
+* authenticating users
+* authorizing users
+* assigning users to devices
+* storing long-term telemetry history
+* exposing a UI
+* receiving remote control commands
+* starting or stopping the pump remotely
+* deciding backend offline status
+
+---
+
+### 5.5 MVP Backend Responsibilities
+
+For MVP, the backend is responsible for:
+
+* receiving telemetry from the broker/backend ingestion path
+* validating device identity from the authenticated transport/topic context
+* validating that telemetry belongs to the expected device
+* validating telemetry message shape
+* storing accepted telemetry
+* rejecting or marking invalid telemetry
+* storing latest known device state
+* recording backend receive time
+* deriving last-seen time
+* deriving online/offline status
+* exposing latest state to the monitoring view
+
+The backend must distinguish between:
+
+```text
+device-reported field observations
+device-provided wall-clock time
+backend receive metadata
+backend-derived monitoring status
+```
+
+---
+
+### 5.6 MVP Device Telemetry Contract
+
+MVP telemetry contains metadata and payload.
+
+The device identity is not included in the telemetry payload. It is derived from the authenticated MQTT/mTLS connection, broker authorization, and topic context.
+
+Example shape:
+
+```json
+{
+  "metadata": {
+    "device_unix_time_ms": 1234567890123
+  },
+  "payload": {
+    "mains_present": true,
+    "pump_relay_active": false
+  }
+}
+```
+
+#### Metadata
+
+`device_unix_time_ms`
+
+Integer.
+
+The device-provided Unix time, in milliseconds.
+
+This represents the device’s wall-clock time at the moment the telemetry sample was created.
+
+This is not the backend receive time and must not be used as the sole basis for offline status.
+
+#### Payload
+
+`mains_present`
+
+Boolean.
+
+Represents observed mains presence at the monitored point.
+
+`pump_relay_active`
+
+Boolean.
+
+Represents observed pump relay/contact active state.
+
+---
+
+### 5.7 MVP Telemetry Publication Rules
+
+The device should publish telemetry when:
+
+* the first valid observation is available after boot/connect
+* `mains_present` changes
+* `pump_relay_active` changes
+* the heartbeat interval elapses, even if values have not changed
+
+The heartbeat allows the backend to distinguish a quiet but connected device from an offline device.
+
+---
+
+### 5.8 MVP Validation Rules
+
+The backend should validate at least:
+
+* the device identity is known
+* the device identity from the authenticated transport context is valid
+* the MQTT topic/device context is consistent with the authenticated device identity
+* the payload has the expected schema
+* `metadata.device_unix_time_ms` is an integer
+* `payload.mains_present` is boolean
+* `payload.pump_relay_active` is boolean
+* invalid messages are rejected or marked invalid
+
+The exact validation implementation may evolve, but the MVP must make invalid telemetry distinguishable from accepted telemetry.
+
+---
+
+### 5.9 MVP Offline Rules
+
+The device does not decide whether it is offline.
+
+The device publishes heartbeat telemetry.
+
+The backend derives offline status from accepted telemetry arrival time.
+
+The backend must not use `device_unix_time_ms` as the sole basis for freshness, or offline status.
+
+If no accepted telemetry arrives within the configured timeout, the backend should show the device as offline.
+
+An offline device state must not be displayed as a fresh confirmed physical state.
+
+---
+
+### 5.10 MVP Non-Goal Statement
+
+The MVP is not a remote pump-control system.
+
+The MVP is not a complete user security system.
+
+The MVP is not an analytics platform.
+
+The MVP is the smallest secure monitoring system that proves:
+
+```text
+provisioned device
+→ authenticated telemetry transport
+→ backend validation
+→ latest-state storage
+→ HTTPS monitoring view
+```
