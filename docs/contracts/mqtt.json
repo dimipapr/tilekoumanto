@@ -1,0 +1,37 @@
+{
+  "contract": "mqtt",
+  "version": 1,
+  "envelope": {
+    "direction": "bidirectional",
+    "topic_pattern": "devices/{device_uuid}/pump/{message_type}",
+    "contents": {
+      "meta": {
+        "unix_time_ms": {
+          "type": "integer",
+          "description": "Message production time in UTC milliseconds."
+        }
+      },
+      "payload": {
+        "type": "object",
+        "description": "Topic-specific message body. Its schema is determined by message_type."
+      }
+    }
+  },
+  "messages": {
+    "pump.telemetry": {
+      "topic": "devices/{device_uuid}/pump/telemetry",
+      "direction": "device_to_backend",
+      "message_type": "telemetry",
+      "payload": {
+        "mains_power_present": {
+          "type": "boolean",
+          "description": "Detected mains power state."
+        },
+        "pump_relay_active": {
+          "type": "boolean",
+          "description": "Detected pump relay state."
+        }
+      }
+    }
+  }
+}
