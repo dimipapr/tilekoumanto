@@ -1,9 +1,11 @@
 import json
-from datetime import datetime, timezone
+import signal
+import threading
 import paho.mqtt.client as mqtt
 from django.core.management.base import BaseCommand
 from devices.models import Device, DeviceMessageRaw
-from django.utils import datetime, timezone
+from datetime import datetime, timezone as dt_timezone
+from django.utils import timezone
 
 BROKER = "mqtt-dev.tilekoumanto.gr" 
 PORT = 8883
@@ -68,7 +70,7 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.WARNING("⚠️ Telemetry dropped. Missing or invalid payload.pump_relay_active."))
                     return
 
-                device_timestamp = datetime.fromtimestamp(unix_time_ms / 1000, tz=timezone.utc)
+                device_timestamp = datetime.fromtimestamp(unix_time_ms / 1000, tz=dt_timezone.utc)
 
                 try:
                     device = Device.objects.get(uuid=device_uuid)
@@ -98,9 +100,28 @@ class Command(BaseCommand):
 
         self.stdout.write("Connecting Worker to Internal Broker...")
         
+        stop_event = threading.Event()
+
+        def request_stop(signum, frame):
+            self.stdout.write("Stopping MQTT catcher...")
+            stop_event.set()
+            client.disconnect()
+
+        signal.signal(signal.SIGTERM, request_stop)
+        signal.signal(signal.SIGINT, request_stop)
+
+        self.stdout.write("Connecting Worker to Internal Broker...")
+
         try:
-            # Notice we completely removed client.tls_set()
             client.connect(BROKER, PORT, 60)
-            client.loop_forever()
+            client.loop_start()
+
+            while not stop_event.is_set():
+                stop_event.wait(1)
+
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"❌ Connection error: {e}"))
+
+        finally:
+            client.loop_stop()
+            self.stdout.write("MQTT catcher stopped.")
