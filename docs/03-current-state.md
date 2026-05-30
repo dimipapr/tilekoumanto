@@ -1,74 +1,87 @@
 # Current State
 
-## Purpose
+## Product scope
 
-This document records what currently exists, what has been verified, what is unverified, and what should happen next.
+Tilekoumanto is currently focused on a monitoring-only MVP for one field and one pump.
 
-## Product scope currently in force
+The MVP exposes:
 
-The current MVP is monitoring-only for one field and one pump.
+- mains power state
+- pump relay state
+- latest known device state through the API
 
-Included:
-
-- remote visibility of mains power state
-- remote visibility of pump relay state
-- simple API/interface showing current state
-
-Excluded for now:
+The MVP does not currently include:
 
 - remote start/stop control
 - pressure monitoring
 - notifications
-- automation/scheduling
+- automation or scheduling
 - multi-field management
-- separate web or mobile dashboard
+- separate web dashboard
+- mobile application
 
-## Repository state observed
+## Implementation state
 
-The repository currently contains:
+The backend device-to-API path is working end-to-end.
 
-- Docker Compose backend stack
-- Django backend project
-- Django `devices` app
-- Django migrations
-- MQTT catcher management command
-- Mosquitto configuration
-- Caddy configuration
-- documentation set under `docs/`
-- operator helper code
-
-## Confirmed working
-
-Unknown / not yet verified in this session.
-
-## Existing but unverified
-
-- Docker Compose stack starts successfully
-- PostgreSQL is reachable from Django
-- Django migrations apply cleanly
-- Mosquitto accepts local MQTT messages
-- `mqtt_catcher` consumes MQTT messages
-- MQTT messages are stored in the database
-- API returns latest known device state
-- Caddy routes HTTP traffic correctly
-
-## Known gaps
-
-- No confirmed STM32 firmware implementation in current state
-- No confirmed field-device message format
-- No confirmed physical relay input wiring implementation
-- No confirmed LTE communication test
-- No farmer-facing dashboard
-- No notification flow
-- No remote-control flow
-
-## Current technical goal
-
-Prove the smallest backend vertical slice:
+Current data flow:
 
 ```text
-manual MQTT test message
+device telemetry
+→ MQTT
 → Mosquitto
 → Django MQTT catcher
 → PostgreSQL
 → API latest state response
+````
+
+The backend stack runs with Docker Compose and includes:
+
+* Django
+* PostgreSQL
+* Mosquitto
+* Caddy
+
+The Django backend contains a `devices` app responsible for device state handling.
+
+## Current telemetry path
+
+The MQTT catcher listens for pump telemetry messages.
+
+Current topic pattern:
+
+```text
+devices/+/pump/telemetry
+```
+
+Telemetry is consumed by the Django backend and made available through the API as the latest known device state.
+
+## Current interface
+
+For the MVP, the API is the only farmer-facing interface.
+
+No separate frontend or mobile application exists yet.
+
+## Current project focus
+
+The project has passed basic backend path validation.
+
+The next focus is to make the MVP contracts explicit and stable so the device side, backend side, and API behavior remain aligned.
+
+## Known gaps
+
+The following still need to be documented, decided, implemented, or validated before the MVP is product-ready:
+
+* MQTT telemetry contract
+* latest-state API contract
+* timestamp semantics
+* stale or unknown state behavior
+* malformed telemetry handling
+* field-device message format
+* physical relay input behavior
+* LTE communication behavior in realistic conditions
+* field-like test procedure
+
+## Next action
+
+Document the MQTT telemetry contract and the latest-state API contract.
