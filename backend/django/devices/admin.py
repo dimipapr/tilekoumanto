@@ -27,6 +27,7 @@ class DeviceAdmin(admin.ModelAdmin):
 class RawMessageAdmin(admin.ModelAdmin):
     list_display = ('device', 'topic', 'device_unix_time_ms', 'received_at')
     readonly_fields = ('payload', 'received_at')
+    ordering = ["-received_at"]
 
 @admin.register(PumpStateSample)
 class PumpStateSampleAdmin(admin.ModelAdmin):
@@ -46,6 +47,7 @@ class PumpStateSampleAdmin(admin.ModelAdmin):
         "mains_power_present",
         "pump_relay_active",
     )
+    ordering = ["-received_at"]
     @admin.display(description="Raw message")
     def raw_message_link(self, obj):
         url = reverse(
