@@ -1,15 +1,13 @@
 from django.contrib import admin
 from django.utils import timezone
 from datetime import timedelta
-from .models import Device, DeviceMessageRaw
+from django.db.models import F
+from .models import Device, DeviceMessageRaw, PumpStateSample
 
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
-    list_display = ('uuid', 'connection_status', 'last_seen', 'created_at')
-    search_fields = ('uuid',)
-    list_filter = ('last_seen', 'created_at')
+    list_display = ('name','last_seen','connection_status', 'created_at','uuid')
     readonly_fields = ('uuid', 'created_at', 'last_seen')
-    ordering = ('-last_seen',)
 
     @admin.display(description='Status')
     def connection_status(self, obj):
@@ -19,11 +17,29 @@ class DeviceAdmin(admin.ModelAdmin):
         if timezone.now() - obj.last_seen < timedelta(minutes=5):
             return "🟢 Online"
         return "🔴 Offline"
-
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return queryset.order_by(F("last_seen").desc(nulls_last=True), "name", "uuid")
 
 @admin.register(DeviceMessageRaw)
 class RawMessageAdmin(admin.ModelAdmin):
     list_display = ('device', 'topic', 'received_at')
-    list_filter = ('device', 'topic')
-    # Makes the JSON payload read-only in the admin panel so you don't accidentally break it
     readonly_fields = ('payload', 'received_at')
+
+@admin.register(PumpStateSample)
+class PumpStateSampleAdmin(admin.ModelAdmin):
+    list_display = (
+        "device",
+        "mains_power_present",
+        "pump_relay_active",
+        "device_timestamp",
+        "received_at"
+    )
+    readonly_fields = (
+        "device",
+        "raw_message",
+        "device_timestamp",
+        "received_at",
+        "mains_power_present",
+        "pump_relay_active",
+    )

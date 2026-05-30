@@ -26,7 +26,13 @@ The MVP does not currently include:
 
 ## Implementation state
 
-The MQTT ingestion path has been validated with the lightweight MQTT contract shape and stores incoming telemetry as raw database messages.
+The MQTT ingestion path has been validated with the lightweight MQTT contract shape 
+
+incoming telemetry is stored in two forms:
+- raw incoming messages in `DeviceMessageRaw`
+- sanitized typed pump state samples in `PumpStateSample`
+
+Device records now include a display name for easier inspection. Device UUID remains the stable identity.
 
 ## Current telemetry path
 
@@ -48,23 +54,16 @@ No separate frontend or mobile application exists yet.
 
 ## Current project focus
 
-The project has passed basic backend path validation.
+The backend device-to-API path is working.
 
-The next focus is to make the MVP contracts explicit and stable so the device side, backend side, and API behavior remain aligned.
+The current focus is to make MQTT ingress reliable, simple, and easy to inspect.
 
-## Known gaps
+The latest-state API contract exists, but API alignment is intentionally deferred while ingress is being cleaned up.
 
-The following still need to be documented, decided, implemented, or validated before the MVP is product-ready:
-
-* MQTT telemetry contract
-* latest-state API contract
-* timestamp semantics
-* stale or unknown state behavior
-* malformed telemetry handling
-* field-device message format
-* physical relay input behavior
-* LTE communication behavior in realistic conditions
-* field-like test procedure
+- MQTT catcher validation and parsing should be cleaned into smaller functions
+- latest-state API still needs to be aligned with `docs/contracts/api.yaml`
+- stale-state behavior still needs to be defined
+- ingress tests still need to be added
 
 ## Next action
 

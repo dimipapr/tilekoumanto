@@ -3,7 +3,7 @@ import signal
 import threading
 import paho.mqtt.client as mqtt
 from django.core.management.base import BaseCommand
-from devices.models import Device, DeviceMessageRaw
+from devices.models import Device, DeviceMessageRaw, PumpStateSample
 from datetime import datetime, timezone as dt_timezone
 from django.utils import timezone
 
@@ -78,11 +78,19 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.WARNING(f"⚠️ Telemetry dropped. Unknown device: {device_uuid}"))
                     return
 
-                DeviceMessageRaw.objects.create(
+                raw_message = DeviceMessageRaw.objects.create(
                     device=device,
                     topic=msg.topic,
                     device_timestamp=device_timestamp,
                     payload=raw_payload
+                )
+
+                sample = PumpStateSample.objects.create(
+                    device=device,
+                    raw_message=raw_message,
+                    device_timestamp=device_timestamp,
+                    mains_power_present=payload["mains_power_present"],
+                    pump_relay_active=payload["pump_relay_active"],
                 )
 
                 device.last_seen = timezone.now()
