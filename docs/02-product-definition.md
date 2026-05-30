@@ -86,7 +86,7 @@ The farmer should be able to understand what the system knows, what it does not 
 
 The MVP is the first usable version of the product. Its purpose is to prove the core value of remote visibility for an existing irrigation pump installation.
 
-The MVP should focus on one field, one pump, and one farmer-facing interface.
+The MVP should focus on one pump, and one farmer-facing interface.
 
 ### 5.1 Included in MVP
 
