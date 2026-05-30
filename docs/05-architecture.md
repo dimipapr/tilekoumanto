@@ -52,11 +52,72 @@ The STM32 reads this contact as a discrete input and treats it as the field sign
 
 ## 5. Communication
 
+The system has two separate communication channels:
+
+- the field-device telemetry channel
+- the user-facing API channel
+
+These channels do not overlap at the transport or protocol level. Their only shared point is the PostgreSQL database.
+
+## 5.1 Field-device telemetry channel
+
 The field device communicates with the backend using MQTT over LTE.
 
-The device publishes field state updates to the MQTT broker. The backend consumes these messages and stores the reported state.
+The device publishes field state updates to the MQTT broker. The backend consumes these messages and stores the reported state in PostgreSQL.
 
 For the MVP, communication is one-way from the field device to the backend. Remote control is not included.
+
+Current MVP data path:
+
+```text
+Field device
+→ MQTT over LTE with mTLS
+→ Mosquitto
+→ Django MQTT consumer
+→ PostgreSQL
+````
+
+## 5.2 MQTT transport security
+
+MQTT communication between the field device and the backend uses TLS with mutual authentication.
+
+Each field device should have its own client certificate. The MQTT broker should only accept telemetry from devices that present a valid client certificate issued by the project-controlled certificate authority.
+
+mTLS is used to:
+
+- encrypt telemetry in transit
+- allow the field device to validate that it is connecting to the legitimate backend/broker
+- allow the MQTT broker to authenticate field devices
+- prevent unknown clients from publishing telemetry
+- support per-device certificate revocation later
+
+For local development, cleartext MQTT may be used inside the Docker Compose network, but this is not the production or field communication model.
+
+## 5.3 User-facing HTTPS channel
+
+Users access the backend API over HTTPS through Caddy.
+
+This channel is used for viewing the latest known device state and any future farmer-facing interactions.
+
+Current MVP user-facing data path:
+
+```text
+User / API client
+→ HTTPS
+→ Caddy
+→ Django API
+→ PostgreSQL
+```
+
+## 5.4 Channel separation
+
+The field-device MQTT channel and the user-facing HTTPS channel are separate.
+
+The MQTT channel writes reported device state into PostgreSQL.
+
+The HTTPS API channel reads the latest known device state from PostgreSQL and returns it to the user.
+
+The database is the only intersection between the two channels.
 
 ## 6. Backend
 
