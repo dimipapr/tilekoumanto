@@ -1,5 +1,9 @@
 # Current State
 
+## Maintenance rule
+
+Update this document only when the stable project state changes. Routine work, debugging details, and small implementation notes belong in `06-implementation-log.md`.
+
 ## Product scope
 
 Tilekoumanto is currently focused on a monitoring-only MVP for one field and one pump.
