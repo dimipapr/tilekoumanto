@@ -1,0 +1,18 @@
+contract: mqtt
+version: 1
+
+topics:
+  pump_telemetry:
+    topic: devices/{device_uuid}/pump/telemetry
+    direction: device_to_backend
+    description: Field device publishes latest pump telemetry.
+
+    parameters:
+      device_uuid: Stable UUID identifying the field device.
+
+    message:
+      meta:
+        unix_time_ms: integer # Message production time in UTC milliseconds.
+      payload:
+        mains_power_present: boolean # Detected mains power state.
+        pump_relay_active: boolean # Detected pump relay state.
