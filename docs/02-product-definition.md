@@ -81,3 +81,17 @@ The system must respect the existing electrical installation and avoid unsafe mo
 
 ### 4.7 Farmer trust
 The farmer should be able to understand what the system knows, what it does not know, and why it raised an alert.
+
+## 5. MVP Scope
+
+The MVP is the first usable version of the product. Its purpose is to prove the core value of remote visibility for an existing irrigation pump installation.
+
+The MVP should focus on one field, one pump, and one farmer-facing interface.
+
+### 5.1 Included in MVP
+
+The MVP includes:
+
+- remote visibility of mains power state
+- remote visibility of pump relay state
+- simple interface showing the current system state
