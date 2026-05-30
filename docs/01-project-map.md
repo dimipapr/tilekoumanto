@@ -2,7 +2,7 @@
 
 ## Project
 
-Tilekoumanto
+Tilekoumanto - remote visibility and control for agricultural pump installations.
 
 ## Product focus
 
