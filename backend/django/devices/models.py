@@ -12,7 +12,7 @@ class Device(models.Model):
 class DeviceMessageRaw(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name='messages')
     topic = models.CharField(max_length=255)
-    device_timestamp = models.DateTimeField()
+    device_unix_time_ms = models.BigIntegerField(null=True, blank=True)
     payload = models.JSONField()
     received_at = models.DateTimeField(auto_now_add=True)
 

@@ -37,3 +37,57 @@ MQTT pump telemetry messages are now stored in two forms:
 - pump relay state
 
 Device display names were added to make admin inspection easier.
+
+## 2026-05-30
+
+Improved MQTT ingress storage, validation, and admin inspection.
+
+The backend now stores incoming pump telemetry in two forms:
+
+- raw incoming MQTT messages in `DeviceMessageRaw`
+- sanitized typed pump state samples in `PumpStateSample`
+
+`DeviceMessageRaw` is used as the raw/debug record. It stores the original decoded JSON payload, MQTT topic, backend receive time, and the device-provided Unix timestamp value when available.
+
+`PumpStateSample` is used as the typed product record. It stores the processed pump state fields used by application logic:
+
+- device timestamp
+- backend receive timestamp
+- mains power state
+- pump relay state
+
+The MQTT catcher now reads the device UUID from the MQTT topic:
+
+```text
+devices/{device_uuid}/pump/telemetry
+````
+
+The current message body shape is:
+
+```text
+meta.unix_time_ms
+payload.mains_power_present
+payload.pump_relay_active
+```
+
+Pydantic models are being used as the executable MQTT message body contract.
+
+Django admin improvements:
+
+* device records now have display names
+* device list sorts by latest `last_seen` first, with null values last
+* raw messages are paginated for safer inspection
+* pump state samples show a link to the related raw message
+* ingestion records are treated as read-only inspection records
+
+Confirmed behavior:
+
+```text
+MQTT message received
+→ device UUID extracted from topic
+→ JSON payload decoded
+→ raw message saved
+→ pump telemetry validated
+→ typed pump state sample saved
+→ admin inspection available
+```

@@ -1,5 +1,7 @@
 from django.contrib import admin
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import format_html
 from datetime import timedelta
 from django.db.models import F
 from .models import Device, DeviceMessageRaw, PumpStateSample
@@ -23,7 +25,7 @@ class DeviceAdmin(admin.ModelAdmin):
 
 @admin.register(DeviceMessageRaw)
 class RawMessageAdmin(admin.ModelAdmin):
-    list_display = ('device', 'topic', 'received_at')
+    list_display = ('device', 'topic', 'device_unix_time_ms', 'received_at')
     readonly_fields = ('payload', 'received_at')
 
 @admin.register(PumpStateSample)
@@ -33,7 +35,8 @@ class PumpStateSampleAdmin(admin.ModelAdmin):
         "mains_power_present",
         "pump_relay_active",
         "device_timestamp",
-        "received_at"
+        "received_at",
+        "raw_message_link",
     )
     readonly_fields = (
         "device",
@@ -43,3 +46,10 @@ class PumpStateSampleAdmin(admin.ModelAdmin):
         "mains_power_present",
         "pump_relay_active",
     )
+    @admin.display(description="Raw message")
+    def raw_message_link(self, obj):
+        url = reverse(
+            "admin:devices_devicemessageraw_change",
+            args=[obj.raw_message_id],
+        )
+        return format_html('<a href="{}">open raw</a>', url)

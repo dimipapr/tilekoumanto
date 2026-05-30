@@ -4,8 +4,10 @@ import threading
 import paho.mqtt.client as mqtt
 from django.core.management.base import BaseCommand
 from devices.models import Device, DeviceMessageRaw, PumpStateSample
+from devices.contracts import MqttMessageMeta, PumpTelemetryMessage
 from datetime import datetime, timezone as dt_timezone
 from django.utils import timezone
+from pydantic import ValidationError
 
 BROKER = "mqtt-dev.tilekoumanto.gr" 
 PORT = 8883
@@ -37,40 +39,7 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.WARNING(f"⚠️ Telemetry dropped. Invalid topic: {msg.topic}"))
                     return
 
-                if topic_parts[0] != "devices" or topic_parts[2] != "pump" or topic_parts[3] != "telemetry":
-                    self.stdout.write(self.style.WARNING(f"⚠️ Telemetry dropped. Unexpected topic: {msg.topic}"))
-                    return
-
                 device_uuid = topic_parts[1]
-
-                raw_payload = json.loads(msg.payload.decode())
-
-                metadata = raw_payload.get("meta")
-                payload = raw_payload.get("payload")
-
-                if not isinstance(metadata, dict):
-                    self.stdout.write(self.style.WARNING("⚠️ Telemetry dropped. Missing or invalid meta object."))
-                    return
-
-                if not isinstance(payload, dict):
-                    self.stdout.write(self.style.WARNING("⚠️ Telemetry dropped. Missing or invalid payload object."))
-                    return
-
-                unix_time_ms = metadata.get("unix_time_ms")
-
-                if not isinstance(unix_time_ms, int):
-                    self.stdout.write(self.style.WARNING("⚠️ Telemetry dropped. Missing or invalid meta.unix_time_ms."))
-                    return
-
-                if not isinstance(payload.get("mains_power_present"), bool):
-                    self.stdout.write(self.style.WARNING("⚠️ Telemetry dropped. Missing or invalid payload.mains_power_present."))
-                    return
-
-                if not isinstance(payload.get("pump_relay_active"), bool):
-                    self.stdout.write(self.style.WARNING("⚠️ Telemetry dropped. Missing or invalid payload.pump_relay_active."))
-                    return
-
-                device_timestamp = datetime.fromtimestamp(unix_time_ms / 1000, tz=dt_timezone.utc)
 
                 try:
                     device = Device.objects.get(uuid=device_uuid)
@@ -78,31 +47,62 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.WARNING(f"⚠️ Telemetry dropped. Unknown device: {device_uuid}"))
                     return
 
+                try:
+                    raw_payload = json.loads(msg.payload.decode())
+                except json.JSONDecodeError:
+                    self.stdout.write(self.style.WARNING("⚠️ Telemetry dropped. Payload is not valid JSON."))
+                    return
+
+                if not isinstance(raw_payload, dict):
+                    self.stdout.write(self.style.WARNING("⚠️ Telemetry dropped. JSON payload must be an object."))
+                    return
+
+                unix_time_ms = None
+
+                try:
+                    meta = MqttMessageMeta.model_validate(raw_payload.get("meta"))
+                    unix_time_ms = meta.unix_time_ms
+                except ValidationError:
+                    pass
+
                 raw_message = DeviceMessageRaw.objects.create(
                     device=device,
                     topic=msg.topic,
-                    device_timestamp=device_timestamp,
-                    payload=raw_payload
+                    device_unix_time_ms=unix_time_ms,
+                    payload=raw_payload,
                 )
 
-                sample = PumpStateSample.objects.create(
+                try:
+                    message = PumpTelemetryMessage.model_validate(raw_payload)
+                except ValidationError as e:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"⚠️ Raw message saved, but pump telemetry rejected: {e}"
+                        )
+                    )
+                    return
+
+                device_timestamp = datetime.fromtimestamp(
+                    message.meta.unix_time_ms / 1000,
+                    tz=dt_timezone.utc,
+                )
+
+                PumpStateSample.objects.create(
                     device=device,
                     raw_message=raw_message,
                     device_timestamp=device_timestamp,
-                    mains_power_present=payload["mains_power_present"],
-                    pump_relay_active=payload["pump_relay_active"],
+                    mains_power_present=message.payload.mains_power_present,
+                    pump_relay_active=message.payload.pump_relay_active,
                 )
 
                 device.last_seen = timezone.now()
                 device.save(update_fields=["last_seen"])
 
-                self.stdout.write(self.style.SUCCESS(f"📥 Saved raw message for {device_uuid}"))
+                self.stdout.write(self.style.SUCCESS(f"📥 Saved pump telemetry for {device_uuid}"))
 
-            except json.JSONDecodeError:
-                self.stdout.write(self.style.WARNING("⚠️ Telemetry dropped. Payload is not valid JSON."))
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"❌ Error processing message: {e}"))
-            
+                        
         client.on_connect = on_connect
         client.on_message = on_message
 
