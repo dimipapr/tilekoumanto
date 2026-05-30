@@ -58,3 +58,26 @@ The interface should focus on practical field questions:
 - How long has it been running?
 
 The interface should avoid unnecessary technical complexity.
+
+## 4. Trust, Safety, and Reliability Principles
+
+### 4.1 Fail-safe behavior
+The system must not create dangerous or unexpected pump behavior. If communication, software, or remote control fails, the installation should remain safe and predictable.
+
+### 4.2 Local control remains operational
+The existing local start/stop circuit should remain usable. The remote system should add control and visibility without making the farmer dependent on the app.
+
+### 4.3 Clear state reporting
+The system should clearly distinguish between known states and unknown states.
+
+### 4.4 Notification reliability
+Important notifications should be delivered as reliably as possible, especially for pump stoppage, mains state change, and pressure loss while the pump is running.
+
+### 4.5 Safe remote control
+Remote start and stop should include safeguards against accidental operation, unclear state, or unsafe conditions.
+
+### 4.6 Electrical safety
+The system must respect the existing electrical installation and avoid unsafe modifications to the three-phase pump control circuit.
+
+### 4.7 Farmer trust
+The farmer should be able to understand what the system knows, what it does not know, and why it raised an alert.
