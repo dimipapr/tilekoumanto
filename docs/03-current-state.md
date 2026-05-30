@@ -26,27 +26,7 @@ The MVP does not currently include:
 
 ## Implementation state
 
-The backend device-to-API path is working end-to-end.
-
-Current data flow:
-
-```text
-device telemetry
-→ MQTT
-→ Mosquitto
-→ Django MQTT catcher
-→ PostgreSQL
-→ API latest state response
-````
-
-The backend stack runs with Docker Compose and includes:
-
-* Django
-* PostgreSQL
-* Mosquitto
-* Caddy
-
-The Django backend contains a `devices` app responsible for device state handling.
+The MQTT ingestion path has been validated with the lightweight MQTT contract shape and stores incoming telemetry as raw database messages.
 
 ## Current telemetry path
 
@@ -88,4 +68,4 @@ The following still need to be documented, decided, implemented, or validated be
 
 ## Next action
 
-Document the MQTT telemetry contract and the latest-state API contract.
+Align api with api contract
