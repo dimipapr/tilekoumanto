@@ -149,3 +149,21 @@ Added focused tests for:
 Added a Pydantic API response contract for latest-state serialization.
 
 Adjusted the raw-message relationship so typed pump state samples can remain usable independently of raw debug messages.
+
+## 2026-05-31 telemetry ingest device sim
+
+Validated the device-to-latest-state path using a temporary Python device telemetry sender.
+
+The sender reads a generated device UUID from `certs/devices/manifest.json`, uses that device certificate material, publishes pump telemetry over MQTT/TLS, and repeats every 60 seconds.
+
+Confirmed that published telemetry updates the latest-state API.
+
+Validated path:
+
+- Python device sender
+- external MQTT/TLS listener
+- Mosquitto
+- Django MQTT catcher
+- `DeviceMessageRaw`
+- `PumpStateSample`
+- latest-state API

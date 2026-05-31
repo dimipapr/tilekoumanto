@@ -30,9 +30,7 @@ The MVP does not currently include:
 
 ## Documentation state
 
-The documentation has recently been reset and narrowed around the monitoring-only MVP.
-
-The implementation is ahead of the refreshed documentation. The current project work is a documentation reconciliation pass: document what already exists, keep the MVP narrow, and separate current implementation facts from future plans and unresolved questions.
+The documentation is mostly up to date with up to the current implementation step.
 
 ## Implementation state
 
@@ -125,6 +123,8 @@ payload.pump_relay_active
 
 The MQTT topic device segment is used to look up the backend `Device.uuid`.
 
+A temporary Python device telemetry sender has been used to validate the end-to-end path from MQTT/TLS publish through to the latest-state API.
+
 ## Current interface
 
 For the MVP, the API is the only farmer-facing interface.
@@ -133,18 +133,9 @@ No separate frontend or mobile application exists yet.
 
 ## Current project focus
 
-The current focus is documentation alignment before further implementation work.
+The documentation reconciliation pass is complete enough to resume implementation.
 
-The immediate goal is to make the refreshed docs accurately describe:
-
-* the implemented backend state
-* the implemented MQTT ingestion path
-* the implemented data model
-* the implemented operator/certificate tooling
-* the current local deployment shape
-* the known gaps before field use
-
-After the documentation reconciliation pass, implementation can continue from a clearer baseline.
+The immediate next implementation task is to harden MQTT payload ingestion so malformed input is handled intentionally without crashing the MQTT worker.
 
 ## Known follow-up implementation areas
 
