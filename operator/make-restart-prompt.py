@@ -1,3 +1,5 @@
+#operator/make-restart-prompt.py
+
 #!/usr/bin/env python3
 
 from pathlib import Path

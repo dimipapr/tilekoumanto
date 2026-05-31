@@ -60,7 +60,22 @@ The implementation also includes operator tooling under `operator/`.
 
 Generated certificate material is local environment state and is ignored by git.
 
-The exact current behavior of the operator tooling still needs to be documented from the implementation files before it is treated as stable project documentation.
+## Operator tooling
+
+The repository includes operator tooling for generating local MQTT/mTLS certificate material.
+
+The command is:
+
+```bash
+python operator/project.py certs <target_count>
+```
+Generated certificate material is written to the top-level certs/ directory, which is ignored by git and treated as local environment state.
+
+The tooling generates a local CA, Mosquitto server certificate material, device client certificate material, and a device manifest.
+
+Generated device identities are UUIDs, and each generated device certificate uses its UUID as the certificate common name.
+
+The relationship between certificate identity, Django device records, MQTT topics, and Mosquitto authorization still needs to be confirmed from the local deployment and backend files.
 
 ## Current telemetry path
 

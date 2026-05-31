@@ -1,3 +1,4 @@
+#.gitignore
 certs
 __pycache__/
 .venv/

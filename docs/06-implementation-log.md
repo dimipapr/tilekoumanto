@@ -91,3 +91,13 @@ MQTT message received
 → typed pump state sample saved
 → admin inspection available
 ```
+
+## 2026-05-31 Operator Certificate tooling reviewed
+
+Reviewed `operator/project.py`, `operator/lib/certs.py`, and `.gitignore`.
+
+Confirmed that the operator CLI can generate local MQTT/mTLS certificate material under the top-level `certs/` directory, which is ignored by git.
+
+The tooling generates a local CA, Mosquitto server certificate material, device client certificate material, and a device manifest. Device certificate identities are generated as UUIDs.
+
+Remaining questions about certificate-to-device mapping, Mosquitto authentication, topic authorization, and production use were left for local deployment/backend review.
