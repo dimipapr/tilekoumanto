@@ -12,7 +12,7 @@ PORT = 8883
 CERTS_ROOT = Path("certs")
 DEVICES_DIR = CERTS_ROOT / "devices"
 MANIFEST_PATH = DEVICES_DIR / "manifest.json"
-PUBLISH_INTERVAL_SECONDS = 60
+PUBLISH_INTERVAL_SECONDS = 10
 
 
 def load_random_device_uuid() -> str:
@@ -48,7 +48,7 @@ def build_payload() -> str:
             },
             "payload": {
                 "mains_power_present": True,
-                "pump_relay_active": True,
+                "pump_relay_active": random.choice([True,False]),
             },
         },
         separators=(",", ":"),

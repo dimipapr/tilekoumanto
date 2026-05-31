@@ -1,7 +1,7 @@
 # backend/django/devices/urls.py
 
 from django.urls import path
-from .views import health_check, latest_device_state
+from .views import health_check, latest_device_state, device_list
 
 urlpatterns = [
     path('health/', health_check, name='api-health'),
@@ -9,4 +9,5 @@ urlpatterns = [
          latest_device_state,
          name="latest-device-state",
     ),
+    path("devices/", device_list, name="device-list")
 ]

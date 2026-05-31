@@ -123,13 +123,19 @@ payload.pump_relay_active
 
 The MQTT topic device segment is used to look up the backend `Device.uuid`.
 
-A temporary Python device telemetry sender has been used to validate the end-to-end path from MQTT/TLS publish through to the latest-state API.
+A temporary Python device telemetry simulator exists for development testing.
+
+It reads a generated device from `certs/devices/manifest.json`, uses that device certificate material, and publishes randomized pump telemetry every 10 seconds.
+
+The simulator has validated the path from external MQTT/TLS publish through to the latest-state API.
 
 ## Current interface
 
-For the MVP, the API is the only farmer-facing interface.
+A simple `/devices` operator page exists for development inspection.
 
-No separate frontend or mobile application exists yet.
+It lists known devices, shows each device latest pump state when available, links to the latest-state JSON endpoint, and orders devices by latest received sample.
+
+This page is operator/developer tooling and is not a separate farmer-facing dashboard.
 
 ## Current project focus
 

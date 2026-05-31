@@ -150,20 +150,31 @@ Added a Pydantic API response contract for latest-state serialization.
 
 Adjusted the raw-message relationship so typed pump state samples can remain usable independently of raw debug messages.
 
-## 2026-05-31 telemetry ingest device sim
+## 2026-05-31 ingest telemetry sim and devices list page
 
-Validated the device-to-latest-state path using a temporary Python device telemetry sender.
+Added a temporary Python device telemetry simulator.
 
-The sender reads a generated device UUID from `certs/devices/manifest.json`, uses that device certificate material, publishes pump telemetry over MQTT/TLS, and repeats every 60 seconds.
+The simulator:
 
-Confirmed that published telemetry updates the latest-state API.
+- reads generated device identities from `certs/devices/manifest.json`
+- selects one generated device UUID
+- uses that device certificate material from `certs/devices/{device_uuid}/`
+- publishes pump telemetry to `devices/{device_uuid}/pump/telemetry`
+- sends randomized `mains_power_present` and `pump_relay_active` values
+- publishes every 10 seconds
+- is development-only and not production firmware
 
-Validated path:
+Confirmed that simulator messages update the latest-state API.
 
-- Python device sender
-- external MQTT/TLS listener
-- Mosquitto
-- Django MQTT catcher
-- `DeviceMessageRaw`
-- `PumpStateSample`
-- latest-state API
+Added a simple `/devices` operator page.
+
+The page:
+
+- lists known devices
+- shows display name and UUID
+- shows latest received pump state
+- shows latest sample timestamps
+- links to each device latest-state JSON endpoint
+- orders devices by latest received sample, newest first
+
+This page is development/operator tooling, not a separate farmer-facing dashboard.

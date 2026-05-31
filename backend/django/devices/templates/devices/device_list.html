@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Devices</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 2rem;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid #ddd;
+        padding: 0.5rem;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      code {
+        font-size: 0.9rem;
+      }
+
+      .state-on {
+        font-weight: 700;
+      }
+
+      .state-off {
+        color: #666;
+      }
+
+      .missing {
+        color: #999;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Devices</h1>
+
+    {% if rows %}
+      <table>
+        <thead>
+          <tr>
+            <th>Device</th>
+            <th>UUID</th>
+            <th>Last seen</th>
+            <th>Mains power</th>
+            <th>Pump relay</th>
+            <th>Sample received</th>
+            <th>Device timestamp</th>
+            <th>API</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>{{ row.device.display_name }}</td>
+              <td><code>{{ row.device.uuid }}</code></td>
+              <td>{{ row.device.last_seen|default:"—" }}</td>
+
+              {% if row.latest_sample %}
+                <td>
+                  {% if row.latest_sample.mains_power_present %}
+                    <span class="state-on">ON</span>
+                  {% else %}
+                    <span class="state-off">OFF</span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if row.latest_sample.pump_relay_active %}
+                    <span class="state-on">ON</span>
+                  {% else %}
+                    <span class="state-off">OFF</span>
+                  {% endif %}
+                </td>
+
+                <td>{{ row.latest_sample.received_at }}</td>
+                <td>{{ row.latest_sample.device_timestamp }}</td>
+              {% else %}
+                <td class="missing">No sample</td>
+                <td class="missing">No sample</td>
+                <td class="missing">No sample</td>
+                <td class="missing">No sample</td>
+              {% endif %}
+
+              <td>
+                <a href="/api/devices/{{ row.device.uuid }}/state">Latest state JSON</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No devices found.</p>
+    {% endif %}
+  </body>
+</html>
