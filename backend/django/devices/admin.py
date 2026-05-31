@@ -10,7 +10,7 @@ from .models import Device, DeviceMessageRaw, PumpStateSample
 
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
-    list_display = ('name','last_seen','connection_status', 'created_at','uuid')
+    list_display = ('display_name','last_seen','connection_status', 'created_at','uuid')
     readonly_fields = ('uuid', 'created_at', 'last_seen')
 
     @admin.display(description='Status')
@@ -23,7 +23,7 @@ class DeviceAdmin(admin.ModelAdmin):
         return "🔴 Offline"
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
-        return queryset.order_by(F("last_seen").desc(nulls_last=True), "name", "uuid")
+        return queryset.order_by(F("last_seen").desc(nulls_last=True), "display_name", "uuid")
 
 @admin.register(DeviceMessageRaw)
 class RawMessageAdmin(admin.ModelAdmin):

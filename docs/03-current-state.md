@@ -49,7 +49,7 @@ Raw messages store the MQTT topic, payload, received time, and optional device-r
 
 Pump state samples store validated mains power and pump relay state linked back to the raw message.
 
-Device records include a display name for easier inspection. Device `uuid` remains the stable device identity.
+Device records include a `display_name` for easier inspection. Device `uuid` remains the stable device identity.
 
 Telemetry is consumed by the Django backend and stored for use by a latest-state API.
 

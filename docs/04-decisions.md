@@ -12,3 +12,12 @@ The Mosquitto deployment uses two listeners:
 
 - port `1883` for internal Docker-network backend traffic
 - port `8883` for external edge-device MQTT over mTLS with client certificates required
+
+## Latest-state API MVP behavior
+
+Accepted for MVP:
+
+- Unknown device UUID returns HTTP 404.
+- Known device with no pump state samples returns HTTP 404.
+- `state_is_stale` is true when the latest sample `received_at` is older than 5 minutes.
+- `device_reported_unix_time_ms` is read from the raw message linked to the latest pump state sample.
