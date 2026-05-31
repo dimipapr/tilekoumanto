@@ -2,4 +2,4 @@ certs
 __pycache__/
 .venv/
 .env
-build*/
+tree.txt
