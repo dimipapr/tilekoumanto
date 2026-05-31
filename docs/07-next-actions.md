@@ -1,50 +1,82 @@
 # Next Actions
 
-## 1. Refactor MQTT catcher
+## Current mode
 
-Keep the MQTT callback small by separating the ingress flow into focused units:
+Documentation reconciliation.
 
-- topic/device UUID extraction
-- JSON decoding
-- raw message storage
-- Pydantic validation
-- typed pump state sample creation
-- device `last_seen` update
+The implementation is ahead of the refreshed docs. First update the docs to match what already exists, then continue implementation.
 
-Goal: the MQTT callback should describe the flow, not contain all implementation details.
+## 1. Review operator tooling
 
-## 2. Tighten Pydantic MQTT contract models
+Read:
 
-Review the existing Pydantic models and make sure they clearly represent:
+- `operator/project.py`
+- `operator/lib/certs.py`
 
-- shared MQTT message metadata
-- pump telemetry payload
-- full pump telemetry message body
+Document:
 
-The Pydantic models are the executable MQTT message body contract.
+- what it generates
+- where files are written
+- what is local-only
+- what is ignored by git
+- how device certificates relate to MQTT/mTLS
 
-## 3. Add ingress tests
+## 2. Review local deployment
 
-Add tests for the MQTT ingestion path:
+Read:
 
-- valid pump telemetry message
-- invalid JSON
-- unknown device UUID
-- missing `meta`
-- missing or invalid `meta.unix_time_ms`
-- missing `payload`
-- wrong `payload.mains_power_present` type
-- wrong `payload.pump_relay_active` type
-- raw message saved but typed sample rejected where appropriate
+- `backend/compose.yml`
+- `backend/mosquitto/config/mosquitto.conf`
+- `backend/caddy/etc/Caddyfile`
+- relevant Django settings
 
-## 4. Decide raw-message retention behavior
+Document:
 
-Decide whether raw MQTT messages should be kept forever during MVP development or whether a cleanup command should exist for test/dev data.
+- which services run locally
+- how Django, PostgreSQL, Mosquitto, and Caddy connect
+- whether MQTT is cleartext or TLS locally
+- what is local-dev-only vs intended production shape
 
-## 5. Decide stale-state behavior
+## 3. Update docs
 
-Define when a device state becomes stale based on backend receive time.
+Update:
 
-## 6. Align latest-state API
+- `03-current-state.md`
+- `05-architecture.md`
+- `04-decisions.md`
+- `08-open-questions.md`
 
-Update the latest-state API to read from `PumpStateSample` and match the API contract.
+Keep current facts, decisions, and open questions separate.
+
+## 4. Check API contract
+
+Compare:
+
+- `docs/contracts/openapi.yaml`
+- `backend/django/devices/views.py`
+- `backend/django/devices/urls.py`
+- `backend/django/devices/models.py`
+
+Document mismatches before changing code.
+
+## 5. Resume implementation
+
+After docs match the current system:
+
+- refactor MQTT catcher
+- tighten Pydantic MQTT contracts
+- add ingress tests
+- define stale-state behavior
+- decide raw-message retention
+- align latest-state API with OpenAPI
+
+## Valid stop point
+
+Safe to pause when:
+
+- current state is accurate
+- architecture matches implementation
+- decisions are recorded
+- open questions are listed
+- this file shows the next small action
+- repo has no uncommitted changes
