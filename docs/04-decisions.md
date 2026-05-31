@@ -31,3 +31,13 @@ After ingress has validated and converted an incoming telemetry message into typ
 For pump status, application/API code should use `PumpStateSample`.
 
 `DeviceMessageRaw` may still be linked from typed records so developers/operators can inspect the original incoming message when debugging.
+
+## Latest-state API timestamp behavior
+
+The latest-state API returns backend and device timestamps but does not compute stale-state status.
+
+For the current MVP implementation, the backend determines the latest pump state sample by `PumpStateSample.received_at`.
+
+`PumpStateSample.device_timestamp` represents the device-reported event time and is retained for future clock validation, delay estimation, and possible event-time ordering.
+
+For the MVP, clients decide whether state is stale using the returned timestamps.

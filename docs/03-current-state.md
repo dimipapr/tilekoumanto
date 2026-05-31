@@ -53,7 +53,7 @@ Device records include a `display_name` for easier inspection. Device `uuid` rem
 
 Telemetry is consumed by the Django backend and stored for use by a latest-state API.
 
-The documented latest-state API contract is not yet implemented. The currently exposed Django device API only includes `GET /api/health/`.
+The latest-state API is implemented at `GET /api/devices/{device_uuid}/state`.
 
 ## Admin inspection
 

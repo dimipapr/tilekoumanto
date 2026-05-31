@@ -133,3 +133,17 @@ Confirmed that Django admin exposes `Device`, `DeviceMessageRaw`, and `PumpState
 Confirmed that the device admin derives an inspection-only connection status from `last_seen` using a five-minute threshold.
 
 Confirmed that `devices/tests.py` currently has no implemented tests.
+
+## 2026-05-32 Latest-state API implementation
+
+Implemented `GET /api/devices/{device_uuid}/state`.
+
+The endpoint returns the latest `PumpStateSample` for a known `Device.uuid`, selected by backend `received_at`.
+
+Added focused tests for:
+
+- latest state response
+- unknown device UUID
+- known device with no pump state samples
+
+Adjusted the raw-message relationship so typed pump state samples can remain usable independently of raw debug messages.
