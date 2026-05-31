@@ -16,6 +16,10 @@ endpoints:
       device_uuid: string
       mains_power_present: boolean
       pump_relay_active: boolean
-      device_reported_unix_time_ms: integer
+      device_reported_at: string
       backend_received_at: string
-      state_is_stale: boolean
+    
+    errors:
+      404:
+        device_not_found: No device exists for the requested UUID
+        device_state_not_found: The device exists but has no pump state samples.
