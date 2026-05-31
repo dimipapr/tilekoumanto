@@ -6,7 +6,7 @@ import threading
 import paho.mqtt.client as mqtt
 from django.core.management.base import BaseCommand
 from devices.models import Device, DeviceMessageRaw, PumpStateSample
-from devices.contracts import MqttMessageMeta, PumpTelemetryMessage
+from devices.contracts.mqtt import MqttMessageMeta, PumpTelemetryMessage
 from datetime import datetime, timezone as dt_timezone
 from django.utils import timezone
 from pydantic import ValidationError

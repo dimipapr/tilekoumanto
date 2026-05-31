@@ -115,9 +115,9 @@ class LatestDeviceStateApiTests(TestCase):
         self.assertEqual(body["pump_relay_active"], True)
         self.assertEqual(
             body["device_reported_at"],
-            latest_sample.device_timestamp.isoformat(),
+            latest_sample.device_timestamp.isoformat().replace("+00:00", "Z"),
         )
         self.assertEqual(
             body["backend_received_at"],
-            latest_sample.received_at.isoformat(),
+            latest_sample.received_at.isoformat().replace("+00:00","Z"),
         )

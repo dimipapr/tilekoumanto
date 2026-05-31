@@ -3,6 +3,7 @@
 from django.http import JsonResponse
 
 from .models import Device, PumpStateSample
+from .contracts.api import LatestDeviceStateResponse
 
 def health_check(request):
     # Just return a simple heartbeat. 
@@ -30,13 +31,13 @@ def latest_device_state(request, device_uuid):
             {"error": "device_state_not_found"},
             status=404,
         )
-  
-    return JsonResponse(
-        {
-            "device_uuid":str(device.uuid),
-            "mains_power_present": latest_sample.mains_power_present,
-            "pump_relay_active": latest_sample.pump_relay_active,
-            "device_reported_at": latest_sample.device_timestamp.isoformat(),
-            "backend_received_at": latest_sample.received_at.isoformat(),
-        }
+    
+    response = LatestDeviceStateResponse(
+        device_uuid=device.uuid,
+        mains_power_present=latest_sample.mains_power_present,
+        pump_relay_active=latest_sample.pump_relay_active,
+        device_reported_at=latest_sample.device_timestamp,
+        backend_received_at=latest_sample.received_at,
     )
+  
+    return JsonResponse(response.model_dump(mode="json"))
