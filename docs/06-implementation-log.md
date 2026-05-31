@@ -101,3 +101,15 @@ Confirmed that the operator CLI can generate local MQTT/mTLS certificate materia
 The tooling generates a local CA, Mosquitto server certificate material, device client certificate material, and a device manifest. Device certificate identities are generated as UUIDs.
 
 Remaining questions about certificate-to-device mapping, Mosquitto authentication, topic authorization, and production use were left for local deployment/backend review.
+
+## 2026-05-31 Local deployment reviewed
+
+Reviewed Docker Compose, Mosquitto config, Caddy config, and Django settings.
+
+Confirmed that the local deployment includes Caddy, Mosquitto, PostgreSQL, Django web, and a separate Django MQTT catcher service.
+
+Confirmed that Mosquitto has an internal anonymous cleartext listener on port `1883` and an external mTLS listener on port `8883`.
+
+Noted that external MQTT uses client certificates and `use_identity_as_username`.
+
+Identified remaining questions around per-device topic authorization, Django device loading from the generated manifest, and the distinction between current local `runserver` behavior and intended production serving.

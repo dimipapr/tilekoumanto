@@ -2,7 +2,11 @@
 
 ## Maintenance rule
 
-Update this document only when the stable project state changes. Routine work, debugging details, and small implementation notes belong in `06-implementation-log.md`.
+Update this document only when the stable project state changes.
+
+Routine work, debugging details, chronological notes, and small implementation notes belong in `06-implementation-log.md`.
+
+Unresolved decisions and uncertainties belong in `08-open-questions.md`.
 
 ## Product scope
 
@@ -10,37 +14,25 @@ Tilekoumanto is currently focused on a monitoring-only MVP for one field and one
 
 The MVP exposes:
 
-- mains power state
-- pump relay state
-- latest known device state through the API
+* mains power state
+* pump relay state
+* latest known device state through the API
 
 The MVP does not currently include:
 
-- remote start/stop control
-- pressure monitoring
-- notifications
-- automation or scheduling
-- multi-field management
-- separate web dashboard
-- mobile application
+* remote start/stop control
+* pressure monitoring
+* notifications
+* automation or scheduling
+* multi-field management
+* separate web dashboard
+* mobile application
 
 ## Documentation state
 
 The documentation has recently been reset and narrowed around the monitoring-only MVP.
 
-The implementation is ahead of the refreshed documentation. Some system pieces already exist in the repository, but the refreshed docs do not yet fully describe them.
-
-The current project work is a documentation reconciliation pass.
-
-The goals of this pass are to:
-
-- document what has already been implemented
-- keep the MVP scope narrow
-- avoid carrying over stale assumptions from older docs
-- identify which implemented parts are stable
-- identify which implemented parts still need review
-- separate current implementation facts from future plans
-- update the docs so future work can continue without reconstructing context
+The implementation is ahead of the refreshed documentation. The current project work is a documentation reconciliation pass: document what already exists, keep the MVP narrow, and separate current implementation facts from future plans and unresolved questions.
 
 ## Implementation state
 
@@ -49,16 +41,34 @@ The backend device-to-API path has been partially implemented and validated.
 The MQTT ingestion path has been validated with the lightweight MQTT contract shape.
 
 Incoming telemetry is stored in two forms:
-- raw incoming messages in `DeviceMessageRaw`
-- sanitized typed pump state samples in `PumpStateSample`
 
-Device records now include a display name for easier inspection. Device UUID remains the stable identity.
+* raw incoming messages in `DeviceMessageRaw`
+* sanitized typed pump state samples in `PumpStateSample`
 
-The implementation also includes operator tooling under `operator/`.
+Device records include a display name for easier inspection. Device UUID remains the stable device identity.
 
-`operator/project.py` exists to generate project/operator artifacts, including local certificate material for MQTT/mTLS development and testing.
+Telemetry is consumed by the Django backend and made available through the API as the latest known device state.
 
-Generated certificate material is local environment state and is ignored by git.
+## Local deployment
+
+The local deployment uses Docker Compose services for:
+
+* Caddy
+* Mosquitto
+* PostgreSQL
+* Django web API
+* Django MQTT catcher
+
+Caddy exposes HTTPS for `dev.tilekoumanto.gr`, serves static files, provides `/gateway/health`, and proxies application traffic to the Django web service.
+
+Mosquitto has two listeners:
+
+* internal cleartext MQTT on port `1883` for backend services
+* external MQTT over TLS on port `8883` for edge devices
+
+The external MQTT listener requires client certificates and uses the certificate identity as the MQTT username.
+
+The Django web service and MQTT catcher both connect to PostgreSQL using environment variables.
 
 ## Operator tooling
 
@@ -69,50 +79,39 @@ The command is:
 ```bash
 python operator/project.py certs <target_count>
 ```
-Generated certificate material is written to the top-level certs/ directory, which is ignored by git and treated as local environment state.
 
-The tooling generates a local CA, Mosquitto server certificate material, device client certificate material, and a device manifest.
+Generated certificate material is written to the top-level `certs/` directory, which is ignored by git and treated as local environment state.
 
-Generated device identities are UUIDs, and each generated device certificate uses its UUID as the certificate common name.
+The tooling generates:
 
-The relationship between certificate identity, Django device records, MQTT topics, and Mosquitto authorization still needs to be confirmed from the local deployment and backend files.
+* a local CA
+* Mosquitto server certificate material
+* device client certificate material
+* a device manifest
+
+Generated device identities are UUIDs. Each generated device certificate uses its UUID as the certificate common name.
 
 ## Current telemetry path
 
-The MQTT catcher listens for pump telemetry messages.
-
-Current topic pattern:
+The MQTT catcher listens for pump telemetry messages on this topic pattern:
 
 ```text
 devices/+/pump/telemetry
 ```
 
-## Current expected message body shape:
+The current expected message body shape is:
 
+```text
 meta.unix_time_ms
 payload.mains_power_present
 payload.pump_relay_active
-
-Telemetry is consumed by the Django backend and made available through the API as the latest known device state.
+```
 
 ## Current interface
 
 For the MVP, the API is the only farmer-facing interface.
 
 No separate frontend or mobile application exists yet.
-
-## Current project focus
-
-The backend device-to-API path is working.
-
-The current focus is to make MQTT ingress reliable, simple, and easy to inspect.
-
-The latest-state API contract exists, but API alignment is intentionally deferred while ingress is being cleaned up.
-
-- MQTT catcher validation and parsing should be cleaned into smaller functions
-- latest-state API still needs to be aligned with `docs/contracts/api.yaml`
-- stale-state behavior still needs to be defined
-- ingress tests still need to be added
 
 ## Current project focus
 
@@ -129,6 +128,8 @@ The immediate goal is to make the refreshed docs accurately describe:
 
 After the documentation reconciliation pass, implementation can continue from a clearer baseline.
 
+## Known follow-up implementation areas
+
 Known follow-up implementation areas include:
 
 * MQTT catcher cleanup
@@ -137,29 +138,3 @@ Known follow-up implementation areas include:
 * stale-state behavior
 * latest-state API alignment with the OpenAPI contract
 * raw-message retention behavior
-
-Known gaps
-
-The following are not yet fully documented or decided in the refreshed docs:
-
-* exact behavior and commands of operator/project.py
-* generated certificate lifecycle and local/production distinction
-* mapping between device identity, certificate identity, and MQTT topic authorization
-* stale-state behavior for latest device state
-* raw-message retention behavior
-* latest-state API alignment with docs/contracts/openapi.yaml
-* ingress test coverage
-* whether the current API response clearly distinguishes fresh, stale, and unknown state
-
-Documentation boundaries
-
-This document should not contain the ordered task list for future work.
-
-Use:
-
-```text
-03-current-state.md for what is currently true
-06-implementation-log.md for chronological work history
-07-next-actions.md for the next ordered actions
-08-open-questions.md for unresolved decisions and uncertainties
-```
