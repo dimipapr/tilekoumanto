@@ -36,3 +36,14 @@ Open considerations:
 - how to handle delayed or out-of-order MQTT messages
 - whether `received_at` remains the ingestion/audit time only
 - how to expose clock skew or delay to clients
+
+## MQTT ingress security and malformed messages
+
+Current MQTT ingress assumes broker-level device authentication and topic authorization.
+
+Open considerations:
+
+- exact maximum accepted MQTT payload size
+- whether rejected malformed payloads should be counted or exposed in operator metrics
+- whether a separate catch-all/security worker should observe rejected or unauthorized traffic
+- whether unknown-device telemetry should ever be retained for investigation
