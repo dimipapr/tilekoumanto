@@ -41,3 +41,11 @@ For the current MVP implementation, the backend determines the latest pump state
 `PumpStateSample.device_timestamp` represents the device-reported event time and is retained for future clock validation, delay estimation, and possible event-time ordering.
 
 For the MVP, clients decide whether state is stale using the returned timestamps.
+
+## API response contracts use Pydantic
+
+API response shapes should be represented with small Pydantic models where useful.
+
+For the MVP, Pydantic is used to keep response serialization and documented API shape aligned.
+
+The lightweight `docs/contracts/openapi.yaml` is removed for now.

@@ -146,4 +146,6 @@ Added focused tests for:
 - unknown device UUID
 - known device with no pump state samples
 
+Added a Pydantic API response contract for latest-state serialization.
+
 Adjusted the raw-message relationship so typed pump state samples can remain usable independently of raw debug messages.
