@@ -34,7 +34,9 @@ class PumpStateSample(models.Model):
     )
     raw_message = models.OneToOneField(
         DeviceMessageRaw,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="pump_state_sample"
     )
 
