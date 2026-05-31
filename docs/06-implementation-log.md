@@ -113,3 +113,13 @@ Confirmed that Mosquitto has an internal anonymous cleartext listener on port `1
 Noted that external MQTT uses client certificates and `use_identity_as_username`.
 
 Identified remaining questions around per-device topic authorization, Django device loading from the generated manifest, and the distinction between current local `runserver` behavior and intended production serving.
+
+## 2026-05-31 API contract reviewed
+
+Reviewed `docs/contracts/openapi.yaml`, `config/urls.py`, `devices/urls.py`, and `devices/views.py`.
+
+Confirmed that the documented latest-state endpoint `GET /api/devices/{device_uuid}/state` is not implemented yet.
+
+The currently exposed Django device API only includes `GET /api/health/`.
+
+Implementation should not continue until the docs clearly mark latest-state API alignment as pending.

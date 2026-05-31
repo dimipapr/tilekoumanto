@@ -14,3 +14,10 @@
 
 - Should local deployment continue using Django `runserver`, or should production serving be documented separately?
 - Should `SECURE_PROXY_SSK_HEADER` be corrected to `SECURE_PROXY_SSL_HEADER`?
+
+## API contract alignment
+
+- Should `GET /api/devices/{device_uuid}/state` be implemented next using the latest `PumpStateSample` for the requested `Device.uuid`?
+- How should `state_is_stale` be calculated?
+- What should the API return when the device exists but has no pump state samples yet?
+- What should the API return when the device UUID is unknown?

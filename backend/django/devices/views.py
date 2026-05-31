@@ -1,3 +1,4 @@
+# backend/django/devices/views.py
 
 from django.http import JsonResponse
 

@@ -12,7 +12,7 @@ Unresolved decisions and uncertainties belong in `08-open-questions.md`.
 
 Tilekoumanto is currently focused on a monitoring-only MVP for one field and one pump.
 
-The MVP exposes:
+The MVP is intended to expose:
 
 * mains power state
 * pump relay state
@@ -47,7 +47,9 @@ Incoming telemetry is stored in two forms:
 
 Device records include a display name for easier inspection. Device `uuid` remains the stable device identity.
 
-Telemetry is consumed by the Django backend and made available through the API as the latest known device state.
+Telemetry is consumed by the Django backend and stored for use by a latest-state API.
+
+The documented latest-state API contract is not yet implemented. The currently exposed Django device API only includes `GET /api/health/`.
 
 ## Local deployment
 
