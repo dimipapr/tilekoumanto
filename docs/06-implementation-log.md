@@ -123,3 +123,13 @@ Confirmed that the documented latest-state endpoint `GET /api/devices/{device_uu
 The currently exposed Django device API only includes `GET /api/health/`.
 
 Implementation should not continue until the docs clearly mark latest-state API alignment as pending.
+
+## 2026-05-31 Django admin and runtime files reviewed
+
+Reviewed Django admin, tests placeholder, Django Dockerfile, and Caddy Dockerfile.
+
+Confirmed that Django admin exposes `Device`, `DeviceMessageRaw`, and `PumpStateSample` for inspection.
+
+Confirmed that the device admin derives an inspection-only connection status from `last_seen` using a five-minute threshold.
+
+Confirmed that `devices/tests.py` currently has no implemented tests.

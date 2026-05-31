@@ -42,14 +42,26 @@ The MQTT ingestion path has been validated with the lightweight MQTT contract sh
 
 Incoming telemetry is stored in two forms:
 
-* raw incoming messages in `DeviceMessageRaw`
-* sanitized typed pump state samples in `PumpStateSample`
+- raw incoming messages in `DeviceMessageRaw`
+- sanitized typed pump state samples in `PumpStateSample`
+
+Raw messages store the MQTT topic, payload, received time, and optional device-reported Unix timestamp.
+
+Pump state samples store validated mains power and pump relay state linked back to the raw message.
 
 Device records include a display name for easier inspection. Device `uuid` remains the stable device identity.
 
 Telemetry is consumed by the Django backend and stored for use by a latest-state API.
 
 The documented latest-state API contract is not yet implemented. The currently exposed Django device API only includes `GET /api/health/`.
+
+## Admin inspection
+
+The Django admin registers `Device`, `DeviceMessageRaw`, and `PumpStateSample` for operator/developer inspection.
+
+The admin device list includes a derived connection status based on `last_seen`.
+
+This admin status is currently inspection-only and is not the documented latest-state API stale-state contract.
 
 ## Local deployment
 
@@ -144,3 +156,4 @@ Known follow-up implementation areas include:
 * stale-state behavior
 * latest-state API alignment with the OpenAPI contract
 * raw-message retention behavior
+* ingress tests

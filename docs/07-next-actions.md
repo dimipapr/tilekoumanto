@@ -2,81 +2,62 @@
 
 ## Current mode
 
-Documentation reconciliation.
+Documentation reconciliation is mostly complete for the current backend/device ingestion path.
 
-The implementation is ahead of the refreshed docs. First update the docs to match what already exists, then continue implementation.
+The next step is to commit the documentation updates, then resume implementation with the smallest missing MVP API endpoint.
 
-## 1. Review operator tooling
+## 1. Commit documentation reconciliation updates
 
-Read:
+Commit the documentation updates covering:
 
-- `operator/project.py`
-- `operator/lib/certs.py`
+- operator certificate tooling
+- local Docker deployment
+- backend device provisioning path
+- MQTT ingestion behavior
+- Django admin inspection
+- current latest-state API gap
+- remaining open questions
 
-Document:
+## 2. Implement latest-state API
 
-- what it generates
-- where files are written
-- what is local-only
-- what is ignored by git
-- how device certificates relate to MQTT/mTLS
+Implement:
 
-## 2. Review local deployment
+```text
+GET /api/devices/{device_uuid}/state
+````
 
-Read:
+Use the latest `PumpStateSample` for the requested `Device.uuid`.
 
-- `backend/compose.yml`
-- `backend/mosquitto/config/mosquitto.conf`
-- `backend/caddy/etc/Caddyfile`
-- relevant Django settings
+Before or during implementation, decide the minimal MVP behavior for:
 
-Document:
+* unknown device UUID
+* known device with no pump state samples
+* `state_is_stale`
 
-- which services run locally
-- how Django, PostgreSQL, Mosquitto, and Caddy connect
-- whether MQTT is cleartext or TLS locally
-- what is local-dev-only vs intended production shape
+## 3. Add focused API tests
 
-## 3. Update docs
+Add tests for:
 
-Update:
+* latest-state API response for a device with a pump state sample
+* unknown device UUID behavior
+* known device with no samples behavior
+* stale-state behavior once defined
 
-- `03-current-state.md`
-- `05-architecture.md`
-- `04-decisions.md`
-- `08-open-questions.md`
+## 4. Resume MQTT ingress cleanup
 
-Keep current facts, decisions, and open questions separate.
+After the latest-state API contract is aligned:
 
-## 4. Check API contract
-
-Compare:
-
-- `docs/contracts/openapi.yaml`
-- `backend/django/devices/views.py`
-- `backend/django/devices/urls.py`
-- `backend/django/devices/models.py`
-
-Document mismatches before changing code.
-
-## 5. Resume implementation
-
-After docs match the current system:
-
-- refactor MQTT catcher
-- tighten Pydantic MQTT contracts
-- add ingress tests
-- define stale-state behavior
-- decide raw-message retention
-- align latest-state API with OpenAPI
+* refactor MQTT catcher into smaller functions
+* tighten or confirm Pydantic MQTT contracts
+* add ingress tests
+* decide unknown-device/raw-message retention behavior
 
 ## Valid stop point
 
 Safe to pause when:
 
-- current state is accurate
-- architecture matches implementation
-- decisions are recorded
-- open questions are listed
-- this file shows the next small action
-- repo has no uncommitted changes
+* current state is accurate
+* implementation log records the latest review
+* open questions contain only unresolved items
+* this file shows the next small implementation step
+* repo has no uncommitted changes
