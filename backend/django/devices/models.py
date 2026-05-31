@@ -9,7 +9,7 @@ class Device(models.Model):
     display_name = models.CharField(max_length=100, default="Unnamed Device")
 
     def __str__(self):
-        return getattr(self, "name", "") or str(self.uuid)
+        return getattr(self, "display_name", "") or str(self.uuid)
 
 class DeviceMessageRaw(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name='messages')
@@ -55,4 +55,4 @@ class PumpStateSample(models.Model):
         verbose_name_plural = "Pump State Samples"
 
     def __str__(self):
-        return f"{self.device.name} @ {self.received_at}"
+        return f"{self.device.display_name} @ {self.received_at}"
