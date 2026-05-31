@@ -21,3 +21,13 @@ Accepted for MVP:
 - Known device with no pump state samples returns HTTP 404.
 - `state_is_stale` is true when the latest sample `received_at` is older than 5 minutes.
 - `device_reported_unix_time_ms` is read from the raw message linked to the latest pump state sample.
+
+## Application state should not depend on raw messages
+
+Raw MQTT messages are retained for debugging, audit, and operator inspection only.
+
+After ingress has validated and converted an incoming telemetry message into typed application records, normal application code should use those typed records instead of reading fields back from `DeviceMessageRaw`.
+
+For pump status, application/API code should use `PumpStateSample`.
+
+`DeviceMessageRaw` may still be linked from typed records so developers/operators can inspect the original incoming message when debugging.
