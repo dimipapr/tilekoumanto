@@ -2,4 +2,5 @@ certs
 __pycache__/
 .venv/
 .env
-tree.txt
+operator/restart-prompts/*
+!operator/restart-prompts/.gitkeep
