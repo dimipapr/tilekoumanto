@@ -1,3 +1,5 @@
+#backend/django/devices/contracts.py
+
 from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt
 
 class MqttMessageMeta(BaseModel):

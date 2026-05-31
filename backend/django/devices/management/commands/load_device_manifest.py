@@ -1,3 +1,5 @@
+#backend/django/devices/management/commands/load_device_manifest.py
+
 import os
 import json
 from django.core.management.base import BaseCommand

@@ -1,3 +1,5 @@
+#backend/django/devices/management/commands/mqtt_catcher.py
+
 import json
 import signal
 import threading

@@ -45,7 +45,7 @@ Incoming telemetry is stored in two forms:
 * raw incoming messages in `DeviceMessageRaw`
 * sanitized typed pump state samples in `PumpStateSample`
 
-Device records include a display name for easier inspection. Device UUID remains the stable device identity.
+Device records include a display name for easier inspection. Device `uuid` remains the stable device identity.
 
 Telemetry is consumed by the Django backend and made available through the API as the latest known device state.
 
@@ -69,6 +69,8 @@ Mosquitto has two listeners:
 The external MQTT listener requires client certificates and uses the certificate identity as the MQTT username.
 
 The Django web service and MQTT catcher both connect to PostgreSQL using environment variables.
+
+The generated device manifest is currently used to provision Django `Device` records.
 
 ## Operator tooling
 
@@ -106,6 +108,8 @@ meta.unix_time_ms
 payload.mains_power_present
 payload.pump_relay_active
 ```
+
+The MQTT topic device segment is used to look up the backend `Device.uuid`.
 
 ## Current interface
 
