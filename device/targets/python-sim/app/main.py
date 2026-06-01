@@ -1,4 +1,4 @@
-import time
+import time, random
 
 from ffi.core import (
     Core,
@@ -25,9 +25,18 @@ def main() -> int:
         return int(time.time() * 1000)
 
     def read_telemetry(out: Telemetry) -> int:
-        out.contents.mains_power = TK_MAINS_POWER_NOT_PRESENT
-        out.contents.pump_relay = TK_PUMP_RELAY_INACTIVE
+        out.contents.mains_power = random.choice([
+            TK_MAINS_POWER_PRESENT,
+            TK_MAINS_POWER_NOT_PRESENT,
+        ])
+
+        out.contents.pump_relay = random.choice([
+            TK_PUMP_RELAY_ACTIVE,
+            TK_PUMP_RELAY_INACTIVE,
+        ])
+
         out.contents.unix_time_ms = unix_time_ms()
+
         return 1
     
     def publish_telemetry(telemetry: Telemetry) -> int:
