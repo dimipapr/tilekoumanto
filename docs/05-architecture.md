@@ -75,7 +75,7 @@ Field device
 → Mosquitto
 → Django MQTT consumer
 → PostgreSQL
-````
+```
 
 ## 5.2 MQTT transport security
 
@@ -180,3 +180,9 @@ Field installation
 → PostgreSQL
 → API
 ```
+
+## Device subsystem
+
+The device-side implementation is split into a shared C core and pluggable targets.
+
+Detailed device architecture is documented in `09-device-subsystem-design.md`.

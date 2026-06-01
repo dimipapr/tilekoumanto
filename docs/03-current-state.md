@@ -28,15 +28,13 @@ The MVP does not currently include:
 * separate web dashboard
 * mobile application
 
-## Documentation state
-
-The documentation is mostly up to date with up to the current implementation step.
-
 ## Implementation state
 
 The backend device-to-API path has been partially implemented and validated.
 
-The MQTT ingestion path has been validated with the lightweight MQTT contract shape.
+The current device telemetry path has also been validated through the Python simulator target, which runs the shared C device core and publishes telemetry over MQTT/mTLS.
+
+The MQTT ingestion path has been validated with the current pump telemetry contract.
 
 Incoming telemetry is stored in two forms:
 
@@ -107,27 +105,20 @@ Generated device identities are UUIDs. Each generated device certificate uses it
 
 ## Current telemetry path
 
-The MQTT catcher listens for pump telemetry messages on this topic pattern:
+The current telemetry path is working end-to-end through the Python simulator.
 
 ```text
-devices/+/pump/telemetry
+python-sim target
+→ shared C device core through FFI
+→ MQTT over mTLS
+→ Django MQTT catcher
+→ backend storage
 ```
+The MQTT topic carries the device UUID.
 
-The current expected message body shape is:
+The backend validates incoming telemetry, stores the full raw message, and projects the current pump state into the existing sample table.
 
-```text
-meta.unix_time_ms
-payload.mains_power_present
-payload.pump_relay_active
-```
-
-The MQTT topic device segment is used to look up the backend `Device.uuid`.
-
-A temporary Python device telemetry simulator exists for development testing.
-
-It reads a generated device from `certs/devices/manifest.json`, uses that device certificate material, and publishes randomized pump telemetry every 10 seconds.
-
-The simulator has validated the path from external MQTT/TLS publish through to the latest-state API.
+Fault data is currently retained in the raw message payload. Dedicated fault persistence is not implemented yet.
 
 ## Current interface
 
@@ -137,20 +128,24 @@ It lists known devices, shows each device latest pump state when available, link
 
 This page is operator/developer tooling and is not a separate farmer-facing dashboard.
 
-## Current project focus
+## Device implementation state
 
-The documentation reconciliation pass is complete enough to resume implementation.
+The shared device core now exists under `device/core`.
 
-The immediate next implementation task is to harden MQTT payload ingestion so malformed input is handled intentionally without crashing the MQTT worker.
+The core owns the application runtime and uses FreeRTOS. Targets provide platform callbacks and hand control to the core through `tk_core_run()`.
+
+The Python simulator target under `device/targets/python-sim` is the current active validation target. It loads the C core through FFI, simulates device inputs, and publishes real MQTT telemetry over mTLS.
+
+The STM32 target scaffold exists under `device/targets/stm32`, but runtime integration with the shared core is still pending.
 
 ## Known follow-up implementation areas
 
-Known follow-up implementation areas include:
-
+* deterministic Python simulator scenarios
+* simulator fault generation
+* dedicated backend fault persistence decision
 * MQTT catcher cleanup
-* Pydantic MQTT contract review
 * ingress tests
 * stale-state behavior
 * latest-state API alignment with the OpenAPI contract
 * raw-message retention behavior
-* ingress tests
+* STM32 integration with the shared device core

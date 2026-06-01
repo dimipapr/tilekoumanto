@@ -1,76 +1,62 @@
 # Next Actions
 
-## Current mode
+## Current focus
 
-Pivot toward MVP device behavior and firmware architecture.
+Stabilize the shared device core and Python simulator path before returning to STM32 integration.
 
-The backend monitoring path is working well enough to support device-side work. A temporary Python simulator can publish randomized pump telemetry, and the latest state is visible through the API and `/devices` operator page.
-
-## 1. Define MVP device behavior
-
-Create a short device behavior document.
-
-Suggested file:
+The current active path is:
 
 ```text
-docs/10-device-behavior.md
+python-sim target
+→ shared C core through FFI
+→ MQTT over mTLS
+→ Django MQTT catcher
+→ backend storage
 ````
 
-Capture:
+## Immediate next actions
 
-* what the MVP device is responsible for
-* what the MVP device explicitly does not do
-* expected runtime behavior
-* current simulator behavior
-* open questions before firmware work
+1. Commit the current runtime, simulator, backend contract, and documentation updates.
 
-Keep the MVP narrow:
+2. Add deterministic Python simulator scenarios.
 
-* monitor mains power state
-* monitor pump relay state
-* publish telemetry periodically
-* no remote start/stop
-* no pressure monitoring
-* no scheduling
-* no automation
+   Random input generation is useful for smoke testing, but repeatable scenarios are needed for validation.
 
-## 2. Sketch firmware architecture
+   Initial scenarios:
 
-After device behavior is written, sketch the first firmware architecture.
+   * steady state
+   * mains power loss
+   * mains power restore
+   * pump relay active
+   * pump relay inactive
+   * unreadable mains input
+   * unreadable pump relay input
 
-Cover only:
+3. Add simulator fault generation.
 
-* device identity
-* state reading
-* telemetry payload creation
-* MQTT publish loop
-* reconnect behavior
-* local/manual pump control staying independent
+   The backend contract supports a fault list, but the simulator currently publishes no faults.
 
-Do not design remote control yet.
+4. Decide how faults should be represented beyond raw-message retention.
 
-## 3. Consider shared device core
+   Current state:
 
-The shared core should be limited to deterministic, platform-independent device logic.
+   * faults are validated
+   * faults are retained in `DeviceMessageRaw.payload`
+   * faults are not projected into a dedicated backend model
 
-Initial shared candidates:
+5. Return to STM32 integration.
 
-- telemetry state representation
-- MQTT topic construction
-- telemetry payload construction
-- simple state validation or normalization rules
+   The STM32 target should implement `tk_platform_t` and hand control to the shared core through `tk_core_run()`.
 
-Keep these outside the shared core:
+## Known follow-up areas
 
-- MQTT networking
-- TLS setup
-- certificate loading
-- filesystem paths
-- hardware/GPIO reads
-- simulator randomization
-- time source
-- sleep/timers
-- reconnect mechanics
-- logging
-
-The simulator and firmware should call the shared core, but own their platform-specific runtime loops.
+* MQTT catcher cleanup
+* ingress tests
+* stale-state behavior
+* latest-state API alignment with the OpenAPI contract
+* raw-message retention policy
+* deterministic simulator scenarios
+* simulator fault generation
+* STM32 shared-core integration
+* real input debouncing
+* real modem/network publishing

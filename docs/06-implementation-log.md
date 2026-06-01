@@ -178,3 +178,63 @@ The page:
 - orders devices by latest received sample, newest first
 
 This page is development/operator tooling, not a separate farmer-facing dashboard.
+
+
+## 2026-06-01 Device core runtime and Python simulator validation
+
+Implemented the first shared device-core runtime path.
+
+The C core now owns the FreeRTOS runtime model and exposes `tk_core_run()` as the target handoff entrypoint.
+
+The Python simulator target now:
+
+- builds the shared C core as a target-local shared library
+- loads the core through `ctypes`
+- provides platform callbacks for log, time, telemetry read, telemetry publish, and stop request
+- simulates telemetry input states
+- publishes real MQTT telemetry over mTLS
+- supports clean shutdown from the simulator process
+
+The core currently publishes telemetry when:
+
+- there is no previous successful publish
+- `mains_power` changes
+- `pump_relay` changes
+- the publish timeout elapses
+
+Aligned the backend MQTT contract with the device-side readable state model.
+
+The current pump telemetry message shape is:
+
+```json
+{
+  "meta": {
+    "unix_time_ms": 1780318912573
+  },
+  "payload": {
+    "readings": {
+      "mains_power": "present",
+      "pump_relay": "inactive"
+    },
+    "faults": []
+  }
+}
+```
+
+Current reading values:
+
+```text
+mains_power: present | not_present | fault
+pump_relay: active | inactive | fault
+```
+
+Current fault values:
+
+```text
+target: mains_power | pump_relay
+type: unreadable
+```
+
+The MQTT catcher now validates the updated contract, saves the full raw payload, and projects the current readings into the existing `PumpStateSample` boolean fields.
+
+Faults are currently validated and retained in the raw message payload, but they are not persisted in a dedicated fault model yet.

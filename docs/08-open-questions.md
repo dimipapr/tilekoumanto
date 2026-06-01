@@ -1,56 +1,38 @@
 # Open Questions
 
-## Device identity and MQTT authorization
 
-- Does Mosquitto currently enforce per-device topic authorization?
-- Should Mosquitto ACLs be added so each device certificate identity can only publish to its own topic?
+## Fault persistence
 
-## Device provisioning
+Faults are currently validated and retained in `DeviceMessageRaw.payload`.
 
-- Is the current certificate tooling local-development-only, or also a basis for production provisioning?
-- Should unknown-device telemetry be retained as raw messages, or is dropping it before raw storage the intended behavior?
+Open question: should faults also be projected into a dedicated backend model?
 
-## Local deployment
+## C telemetry fault model
 
-- Should local deployment continue using Django `runserver`, or should production serving be documented separately?
-- Should `SECURE_PROXY_SSK_HEADER` be corrected to `SECURE_PROXY_SSL_HEADER`?
+The backend contract supports a fault list, but the current C `tk_telemetry_t` is still minimal.
 
-## API contract alignment
+Open question: how should fault details enter the C telemetry model?
 
-- Should `GET /api/devices/{device_uuid}/state` be implemented next using the latest `PumpStateSample` for the requested `Device.uuid`?
-- How should `state_is_stale` be calculated?
-- What should the API return when the device exists but has no pump state samples yet?
-- What should the API return when the device UUID is unknown?
+## Publish timeout time source
 
-## Device timestamp as primary sample time
+Current publish timeout uses telemetry timestamps.
 
-Consider making `PumpStateSample.device_timestamp` the primary time for ordering pump state samples after device clock validation is defined.
+Open question: should publish timeout eventually use FreeRTOS tick time instead of wall-clock Unix time?
 
-Current MVP latest-state selection uses backend `received_at`.
+## Simulator behavior model
 
-Future behavior may use `device_timestamp` once the system can validate or trust device clock behavior well enough.
+The Python simulator currently uses random input generation.
 
-Open considerations:
+Open question: how should deterministic scenarios be represented?
 
-- how to detect bad device clocks
-- how to handle delayed or out-of-order MQTT messages
-- whether `received_at` remains the ingestion/audit time only
-- how to expose clock skew or delay to clients
+## STM32 identity storage
 
-## MQTT ingress security and malformed messages
+Open question: how should the embedded target store and load provisioned identity/cert material?
 
-Current MQTT ingress assumes broker-level device authentication and topic authorization.
+## STM32 logging
 
-Open considerations:
+Open question: what should the STM32 logging sink be during bring-up and later production firmware?
 
-- exact maximum accepted MQTT payload size
-- whether rejected malformed payloads should be counted or exposed in operator metrics
-- whether a separate catch-all/security worker should observe rejected or unauthorized traffic
-- whether unknown-device telemetry should ever be retained for investigation
+## Backend fault API
 
-## Hardware Thoughts
-
-- Can the MVP input circuits detect disconnected sensor wires or shorts?
-- What electrical method will be used for end-of-circuit verification?
-- Should the API expose input health separately from the measured pump/mains state?
-- How should the UI present an unknown or invalid input state?
+Open question: if faults get a dedicated model, how should latest-state and historical APIs expose them?
