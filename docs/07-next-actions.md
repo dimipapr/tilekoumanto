@@ -12,11 +12,33 @@ python-sim target
 → MQTT over mTLS
 → Django MQTT catcher
 → backend storage
-````
+```
 
 ## Immediate next actions
 
-1. Commit the current runtime, simulator, backend contract, and documentation updates.
+1. Separate FreeRTOS-free telemetry policy from the telemetry runtime task.
+
+   Current state:
+
+   * `tk_core.c` owns core setup, task creation, scheduler startup, logging, and stop handling.
+   * Telemetry behavior has been moved out of `tk_core.c`.
+   * Telemetry publish timeout now uses elapsed runtime time passed as `uint64_t` milliseconds.
+   * `tk_should_publish_telemetry()` is already close to FreeRTOS-free core policy.
+
+   Next cleanup:
+
+   * Keep FreeRTOS-free telemetry decision logic separate from the FreeRTOS task/runtime adapter.
+   * Keep `tk_should_publish_telemetry()` independent of FreeRTOS types.
+   * Move or isolate FreeRTOS-specific task logic, tick conversion, and platform callback usage from pure telemetry policy.
+   * Preserve current behavior while improving testability and module boundaries.
+
+   Possible file direction:
+
+   ```text
+   device/core/src/tk_telemetry.c          # FreeRTOS-free telemetry policy
+   device/core/src/tk_telemetry_task.c     # FreeRTOS task/runtime adapter
+   device/core/include/tk_telemetry.h
+
 
 2. Add deterministic Python simulator scenarios.
 

@@ -81,7 +81,13 @@ device/
     └── stm32/
 ```
 
-The shared core owns the application runtime.
+The shared core owns task creation and scheduler startup.
+
+The current application task graph contains one task:
+
+```text
+telemetry task
+```
 
 Targets own platform implementation and provide callbacks to the core.
 
@@ -360,7 +366,6 @@ Known device-subsystem follow-ups:
 * add deterministic Python simulator scenarios
 * add simulator fault generation
 * decide how fault state should enter the C telemetry model
-* decide whether publish timeout should use wall-clock time or FreeRTOS tick time
 * cleanly integrate the shared core into the STM32 target
 * implement STM32 `tk_platform_t`
 * implement real input reading and debouncing

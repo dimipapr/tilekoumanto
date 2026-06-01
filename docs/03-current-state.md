@@ -130,13 +130,11 @@ This page is operator/developer tooling and is not a separate farmer-facing dash
 
 ## Device implementation state
 
-The shared device core now exists under `device/core`.
+The shared device core runtime has been split so that `tk_core.c` owns core setup, task creation, scheduler startup, logging, and stop handling, while telemetry runtime behavior lives in `tk_telemetry.c`.
 
-The core owns the application runtime and uses FreeRTOS. Targets provide platform callbacks and hand control to the core through `tk_core_run()`.
+The current core-created application task is the telemetry task.
 
-The Python simulator target under `device/targets/python-sim` is the current active validation target. It loads the C core through FFI, simulates device inputs, and publishes real MQTT telemetry over mTLS.
-
-The STM32 target scaffold exists under `device/targets/stm32`, but runtime integration with the shared core is still pending.
+Telemetry message timestamps remain device/event timestamps. Publish timeout behavior now uses runtime elapsed time rather than subtracting telemetry message timestamps.
 
 ## Known follow-up implementation areas
 

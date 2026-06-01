@@ -13,12 +13,6 @@ The backend contract supports a fault list, but the current C `tk_telemetry_t` i
 
 Open question: how should fault details enter the C telemetry model?
 
-## Publish timeout time source
-
-Current publish timeout uses telemetry timestamps.
-
-Open question: should publish timeout eventually use FreeRTOS tick time instead of wall-clock Unix time?
-
 ## Simulator behavior model
 
 The Python simulator currently uses random input generation.

@@ -238,3 +238,19 @@ type: unreadable
 The MQTT catcher now validates the updated contract, saves the full raw payload, and projects the current readings into the existing `PumpStateSample` boolean fields.
 
 Faults are currently validated and retained in the raw message payload, but they are not persisted in a dedicated fault model yet.
+
+## 2026-06-01 Device core cleanup and telemetry timing separation
+
+Split the shared device core runtime so `tk_core.c` focuses on platform setup, task creation, scheduler startup, logging, and stop handling.
+
+Moved telemetry task behavior and telemetry publish-decision logic into telemetry-specific core files.
+
+The current core-created application task is the telemetry task.
+
+Changed telemetry publish timeout handling so timeout decisions use elapsed runtime time since the last successful publish instead of subtracting telemetry message timestamps.
+
+`tk_telemetry_t.unix_time_ms` remains the telemetry message/event timestamp.
+
+The publish-decision function now receives elapsed milliseconds as an explicit `uint64_t`, keeping the policy independent of FreeRTOS-specific types.
+
+Split FreeRTOS into a separate CMake target and tightened compile warnings for project core code.

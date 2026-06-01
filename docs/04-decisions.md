@@ -150,48 +150,20 @@ The authoritative validation contract lives in:
 backend/django/devices/contracts/mqtt.py
 ```
 
-## Questions still open
+## Device runtime timing
 
-Keep these as open:
+Telemetry message timestamps and runtime elapsed time are separate.
 
-```markdown
-## Open questions
+`tk_telemetry_t.unix_time_ms` is the device/message timestamp used in published telemetry.
 
-### Fault persistence
+Telemetry publish timeout decisions do not use `tk_telemetry_t.unix_time_ms`.
 
-Faults are currently validated and retained in `DeviceMessageRaw.payload`.
+The telemetry task computes elapsed time since the last successful publish using the runtime monotonic timer and passes that elapsed duration, in milliseconds, into the publish-decision function.
 
-Open question: should faults also be projected into a dedicated backend model?
+The publish-decision policy remains independent of FreeRTOS-specific types.
 
-### C telemetry fault model
-
-The backend contract supports a fault list, but the current C `tk_telemetry_t` is still minimal.
-
-Open question: how should fault details enter the C telemetry model?
-
-### Publish timeout time source
+## Publish timeout time source
 
 Current publish timeout uses telemetry timestamps.
 
 Open question: should publish timeout eventually use FreeRTOS tick time instead of wall-clock Unix time?
-
-### Simulator behavior model
-
-The Python simulator currently uses random input generation.
-
-Open question: how should deterministic scenarios be represented?
-
-### STM32 identity storage
-
-Open question: how should the embedded target store and load provisioned identity/cert material?
-
-### STM32 logging
-
-Open question: what should the STM32 logging sink be during bring-up and later production firmware?
-
-### Backend fault API
-
-Open question: if faults get a dedicated model, how should latest-state and historical APIs expose them?
-````
-
-I would not include all low-level “how do we build STM32” questions here unless they are actually still unresolved. Keep `08` focused on decisions that affect architecture/product direction.
