@@ -2,8 +2,9 @@ import ctypes
 from pathlib import Path
 
 
+PYTHON_TARGET_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CORE_LIBRARY_PATH = (
-    Path(__file__).resolve().parents[1]
+    PYTHON_TARGET_ROOT
     / "build"
     / "debug"
     / "core"
@@ -11,14 +12,33 @@ DEFAULT_CORE_LIBRARY_PATH = (
 )
 
 
+TK_MAINS_POWER_PRESENT = 0
+TK_MAINS_POWER_NOT_PRESENT = 1
+TK_MAINS_POWER_FAULT = 2
+
+TK_PUMP_RELAY_ACTIVE = 0
+TK_PUMP_RELAY_INACTIVE = 1
+TK_PUMP_RELAY_FAULT = 2
+
+
+class Telemetry(ctypes.Structure):
+    _fields_ = [
+        ("mains_power", ctypes.c_int),
+        ("pump_relay", ctypes.c_int),
+        ("unix_time_ms", ctypes.c_uint64),
+    ]
+
+
 LOG_CB = ctypes.CFUNCTYPE(None, ctypes.c_char_p)
 UNIX_TIME_MS_CB = ctypes.CFUNCTYPE(ctypes.c_uint64)
+READ_TELEMETRY_CB = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.POINTER(Telemetry))
 
 
 class Platform(ctypes.Structure):
     _fields_ = [
         ("log", LOG_CB),
         ("unix_time_ms", UNIX_TIME_MS_CB),
+        ("read_telemetry", READ_TELEMETRY_CB),
     ]
 
 
@@ -28,12 +48,7 @@ class Core:
 
         if not path.exists():
             raise FileNotFoundError(
-                f"Core shared library not found: {path}\n"
-                "Build it first with:\n"
-                "  cd device/targets/python-sim\n"
-                "  cmake --preset debug\n"
-                "  cmake --build --preset debug"
-            )
+                f"Core shared library not found: {path}\n")
 
         self._lib = ctypes.CDLL(str(path))
 

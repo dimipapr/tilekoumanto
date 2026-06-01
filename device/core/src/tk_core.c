@@ -52,7 +52,7 @@ int tk_core_run(const tk_platform_t *platform)
         return 0;
     }
 
-    tk_log(platform, "core platform probe starting");
+    tk_log(platform, "core starting");
 
     now = platform->unix_time_ms();
 
@@ -61,8 +61,33 @@ int tk_core_run(const tk_platform_t *platform)
         return 0;
     }
 
+    tk_telemetry_t telemetry = {0};
+
+    if (platform->read_telemetry == 0) {
+        tk_log(platform, "read_telemetry callback missing");
+        return 0;
+    }
+
+    if (platform->read_telemetry(&telemetry) == 0) {
+        tk_log(platform, "read_telemetry failed");
+        return 0;
+    }
+
+    tk_log(
+        platform,
+        "mains:%s relay:%s time:%" PRIu64,
+        (telemetry.mains_power == TK_MAINS_POWER_PRESENT) ? "present" :
+        (telemetry.mains_power == TK_MAINS_POWER_NOT_PRESENT) ? "not_present" :
+        "fault",
+        (telemetry.pump_relay == TK_PUMP_RELAY_ACTIVE) ? "active" :
+        (telemetry.pump_relay == TK_PUMP_RELAY_INACTIVE) ? "inactive" :
+        "fault",
+        telemetry.unix_time_ms
+    );
+   
+
     tk_log(platform, "core platform time ms: %" PRIu64, now);
-    tk_log(platform, "core platform probe complete");
+    tk_log(platform, "core run complete");
 
     return 1;
 }
