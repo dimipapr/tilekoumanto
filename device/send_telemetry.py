@@ -1,3 +1,5 @@
+# device/send_telemetry.py
+
 import json
 import random
 import ssl

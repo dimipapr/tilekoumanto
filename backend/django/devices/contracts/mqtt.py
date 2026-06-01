@@ -1,4 +1,4 @@
-#backend/django/devices/contracts.py
+#backend/django/devices/contracts/mqtt.py
 
 from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt
 

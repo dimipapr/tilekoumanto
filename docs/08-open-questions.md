@@ -47,3 +47,10 @@ Open considerations:
 - whether rejected malformed payloads should be counted or exposed in operator metrics
 - whether a separate catch-all/security worker should observe rejected or unauthorized traffic
 - whether unknown-device telemetry should ever be retained for investigation
+
+## Hardware Thoughts
+
+- Can the MVP input circuits detect disconnected sensor wires or shorts?
+- What electrical method will be used for end-of-circuit verification?
+- Should the API expose input health separately from the measured pump/mains state?
+- How should the UI present an unknown or invalid input state?
