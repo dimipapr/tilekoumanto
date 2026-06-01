@@ -10,8 +10,13 @@ DOCS = [
     "docs/01-project-map.md",
     "docs/02-product-definition.md",
     "docs/03-current-state.md",
+    "docs/04-decisions.md",
+    "docs/05-architecture.md",
+    "docs/06-implementation-log.md",
     "docs/07-next-actions.md",
-    "docs/09-scratchbook.md",
+    "docs/08-open-questions.md",
+    "docs/09-device-subsystem.md",
+    "docs/10-scratchbook.md",
 ]
 
 OUTPUT_DIR = ROOT / "operator" / "restart-prompts"
@@ -61,14 +66,15 @@ Documentation conventions:
 - `06-implementation-log.md` should record chronological work history.
 - `07-next-actions.md` should stay short and readable.
 - `08-open-questions.md` should capture unresolved questions.
-- `09-scratchbook.md` should not become a permanent source of truth.
+- `09-device-subsystem.md` should have device hardware and software definitions and architecture.
+- `10-scratchbook.md` should not become a permanent source of truth.
 - Do not put the ordered task list inside `03-current-state.md`.
 
 Project workflow:
 1. Read the documentation below in order.
 2. Use the repository tree to understand where relevant files live.
 3. Identify the current project mode and next small action from the docs.
-4. Review `09-scratchbook.md` for useful notes, obsolete notes, or unresolved thoughts.
+4. Review `10-scratchbook.md` for useful notes, obsolete notes, or unresolved thoughts.
 5. Ask for the smallest set of implementation files needed for the next action.
 6. Review those files against the docs.
 7. Propose minimal documentation updates.
@@ -77,7 +83,7 @@ Project workflow:
 Start by telling me:
 - what the current project mode appears to be
 - what the next small action appears to be
-- whether anything in `09-scratchbook.md` should move into another doc
+- whether anything in `10-scratchbook.md` should move into another doc
 - which files you need next, if any
 """
 

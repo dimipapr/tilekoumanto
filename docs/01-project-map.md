@@ -37,7 +37,8 @@ It does not include remote start/stop control, pressure monitoring, automation, 
 - `06-implementation-log.md` records chronological work progress and changes.
 - `07-next-actions.md` defines the next small implementation and documentation tasks.
 - `08-open-questions.md` tracks unresolved questions that need research, testing, or decisions.
-- `09-scratchbook.md` is for temporary notes, rough ideas, and unsorted thoughts.
+- `09-device-subsystem.md` field device design architecture and other thingies
+- `10-scratchbook.md` is for temporary notes, rough ideas, and unsorted thoughts.
 
 ## Stop point
 
@@ -49,7 +50,7 @@ A valid stop point requires:
 - `06-implementation-log.md` has a latest entry describing what changed in the last work session.
 - `07-next-actions.md` contains the next small action to take.
 - Any unresolved uncertainty is captured in `08-open-questions.md`.
-- `09-scratchbook.md` has been reviewed, with useful notes moved into the correct document and obsolete notes removed.
+- `10-scratchbook.md` has been reviewed, with useful notes moved into the correct document and obsolete notes removed.
 - The repository has no uncommitted changes.
 
 The project is safe to pause when future work can continue by reading `01-project-map.md`, `03-current-state.md`, and `07-next-actions.md` without needing to reconstruct context from scratch.
