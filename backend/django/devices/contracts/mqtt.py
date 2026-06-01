@@ -1,17 +1,49 @@
 #backend/django/devices/contracts/mqtt.py
 
+from enum import StrEnum
+
 from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt
+
+class MainsPowerState(StrEnum):
+    PRESENT = "present"
+    NOT_PRESENT = "not_present"
+    FAULT = "fault"
+
+class PumpRelayState(StrEnum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    FAULT = "fault"
+
+class FaultTarget(StrEnum):
+    MAINS_POWER = "mains_power"
+    PUMP_RELAY = "pump_relay"
+
+class FaultType(StrEnum):
+    UNREADABLE = "unreadable"
 
 class MqttMessageMeta(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     unix_time_ms: StrictInt
 
+class PumpTelemetryReadings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    mains_power: MainsPowerState
+    pump_relay: PumpRelayState
+
+class PumpTelemetryFault(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    target: FaultTarget
+    type: FaultType
+
 class PumpTelemetryPayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    mains_power_present: StrictBool
-    pump_relay_active: StrictBool
+    readings: PumpTelemetryReadings
+    faults: list[PumpTelemetryFault]
+
 
 class PumpTelemetryMessage(BaseModel):
     model_config = ConfigDict(extra="forbid")
