@@ -14,12 +14,7 @@
 #define TK_CORE_TASK_STACK_WORDS 512
 #define TK_IDLE_TASK_STACK_WORDS configMINIMAL_STACK_SIZE
 
-#define TK_CORE_SIM_LOOP_COUNT 5U
 #define TK_CORE_LOOP_PERIOD_MS 1000U
-
-#if configSUPPORT_STATIC_ALLOCATION != 1
-#error "configSUPPORT_STATIC_ALLOCATION is not enabled"
-#endif
 
 static int g_has_last_published = 0;
 static tk_telemetry_t g_last_published;
@@ -195,7 +190,6 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
 static void tk_core_task(void *argument)
 {
     TickType_t last_wake_tick;
-    unsigned int i;
 
     (void)argument;
 
@@ -203,8 +197,11 @@ static void tk_core_task(void *argument)
 
     last_wake_tick = xTaskGetTickCount();
 
-    for (i = 0U; i < TK_CORE_SIM_LOOP_COUNT; i++) {
-        tk_log(g_platform, "core loop %u", i);
+    for (;;) {
+        if (g_platform->should_stop != 0 && g_platform->should_stop()) {
+            tk_log(g_platform, "core stop requested");
+            break;
+        }
 
         if (!tk_process_telemetry_once(g_platform)) {
             tk_log(g_platform, "core telemetry processing failed");
@@ -214,11 +211,6 @@ static void tk_core_task(void *argument)
     }
 
     tk_log(g_platform, "core task complete");
-
-    /*
-     * This lets the POSIX simulator return to Python after the test loop.
-     * On the STM32 target, the real runtime should normally run forever.
-     */
     vTaskEndScheduler();
 
     for (;;) {
@@ -268,7 +260,7 @@ int tk_core_run(const tk_platform_t *platform)
 
     vTaskStartScheduler();
 
-    tk_log(platform, "core scheduler stopped");
+    tk_log(platform, "core scheduler stopped unexpectedly");
 
-    return 1;
+    return 0;
 }
