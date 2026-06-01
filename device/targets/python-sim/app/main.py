@@ -21,7 +21,7 @@ def main() -> int:
     )
 
     print(f"tilekoumanto core version: {core.version()}")
-    print(f"platform probe: {core.probe_platform(platform)}")
+    print(f"core run: {core.run(platform)}")
 
     return 0
 

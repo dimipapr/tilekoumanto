@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/home/jim/Documents/tilekoumanto/device/targets/python-sim/build/debug",
-  "command": "/usr/bin/cc -Dtilekoumanto_core_EXPORTS -I/home/jim/Documents/tilekoumanto/device/core/include -g -std=c99 -fPIC -Wall -Wextra -Wpedantic -o core/CMakeFiles/tilekoumanto_core.dir/src/tk_core.c.o -c /home/jim/Documents/tilekoumanto/device/core/src/tk_core.c",
-  "file": "/home/jim/Documents/tilekoumanto/device/core/src/tk_core.c",
-  "output": "/home/jim/Documents/tilekoumanto/device/targets/python-sim/build/debug/core/CMakeFiles/tilekoumanto_core.dir/src/tk_core.c.o"
-}
-]

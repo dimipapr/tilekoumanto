@@ -4,6 +4,6 @@
 #include "tk_platform.h"
 
 int tk_core_version(void);
-int tk_core_probe_platform(const tk_platform_t *platform);
+int tk_core_run(const tk_platform_t *platform);
 
 #endif

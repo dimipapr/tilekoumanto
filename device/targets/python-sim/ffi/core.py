@@ -2,9 +2,8 @@ import ctypes
 from pathlib import Path
 
 
-PYTHON_TARGET_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CORE_LIBRARY_PATH = (
-    PYTHON_TARGET_ROOT
+    Path(__file__).resolve().parents[1]
     / "build"
     / "debug"
     / "core"
@@ -31,7 +30,7 @@ class Core:
             raise FileNotFoundError(
                 f"Core shared library not found: {path}\n"
                 "Build it first with:\n"
-                "  cd device/targets/python\n"
+                "  cd device/targets/python-sim\n"
                 "  cmake --preset debug\n"
                 "  cmake --build --preset debug"
             )
@@ -41,13 +40,13 @@ class Core:
         self._lib.tk_core_version.argtypes = []
         self._lib.tk_core_version.restype = ctypes.c_int
 
-        self._lib.tk_core_probe_platform.argtypes = [
+        self._lib.tk_core_run.argtypes = [
             ctypes.POINTER(Platform),
         ]
-        self._lib.tk_core_probe_platform.restype = ctypes.c_int
+        self._lib.tk_core_run.restype = ctypes.c_int
 
     def version(self) -> int:
         return int(self._lib.tk_core_version())
 
-    def probe_platform(self, platform: Platform) -> bool:
-        return bool(self._lib.tk_core_probe_platform(ctypes.byref(platform)))
+    def run(self, platform: Platform) -> bool:
+        return bool(self._lib.tk_core_run(ctypes.byref(platform)))

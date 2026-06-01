@@ -1,8 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/jim/Documents/tilekoumanto/device/targets/python-sim/build/debug/cmake_install.cmake",
-		"/home/jim/Documents/tilekoumanto/device/targets/python-sim/build/debug/core/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

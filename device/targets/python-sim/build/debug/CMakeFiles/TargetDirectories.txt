@@ -1,5 +1,0 @@
-/home/jim/Documents/tilekoumanto/device/targets/python-sim/build/debug/CMakeFiles/edit_cache.dir
-/home/jim/Documents/tilekoumanto/device/targets/python-sim/build/debug/CMakeFiles/rebuild_cache.dir
-/home/jim/Documents/tilekoumanto/device/targets/python-sim/build/debug/core/CMakeFiles/tilekoumanto_core.dir
-/home/jim/Documents/tilekoumanto/device/targets/python-sim/build/debug/core/CMakeFiles/edit_cache.dir
-/home/jim/Documents/tilekoumanto/device/targets/python-sim/build/debug/core/CMakeFiles/rebuild_cache.dir

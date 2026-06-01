@@ -36,7 +36,7 @@ int tk_core_version(void)
     return 1;
 }
 
-int tk_core_probe_platform(const tk_platform_t *platform)
+int tk_core_run(const tk_platform_t *platform)
 {
     uint64_t now;
 

@@ -1,7 +1,0 @@
-# ninja log v7
-1	12	1780308138932489934	core/CMakeFiles/tilekoumanto_core.dir/src/tk_core.c.o	9ab54eed6d173b2b
-13	22	1780308138951457442	core/libtilekoumanto_core.so	a2623225b41c2dff
-1	39	1780309664846367602	core/CMakeFiles/tilekoumanto_core.dir/src/tk_core.c.o	9ab54eed6d173b2b
-39	49	1780309664889873006	core/libtilekoumanto_core.so	a2623225b41c2dff
-1	47	1780311604263891182	core/CMakeFiles/tilekoumanto_core.dir/src/tk_core.c.o	9ab54eed6d173b2b
-47	61	1780311604311184803	core/libtilekoumanto_core.so	a2623225b41c2dff

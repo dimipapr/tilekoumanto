@@ -6,4 +6,5 @@ __pycache__/
 operator/restart-prompts/*
 !operator/restart-prompts/.gitkeep
 device/targets/stm32/build/
+device/targets/python-sim/build/
 device/core/build/
