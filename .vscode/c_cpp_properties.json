@@ -1,6 +1,13 @@
 {
   "configurations": [
     {
+      "name": "Simulator",
+      "compileCommands": "${workspaceFolder}/device/targets/python/build/debug/compile_commands.json",
+      "intelliSenseMode": "linux-gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "c99"
+    },
+    {
       "name": "STM32",
       "compileCommands": "${workspaceFolder}/device/targets/stm32/build/debug/compile_commands.json",
       "intelliSenseMode": "linux-gcc-arm",
