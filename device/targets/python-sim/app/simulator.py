@@ -1,6 +1,7 @@
 import random
 import time
 
+from app.publisher import TelemetryPublisher
 from ffi.core import (
     Telemetry,
     TK_MAINS_POWER_NOT_PRESENT,
@@ -14,6 +15,7 @@ class PythonSim:
     def __init__(self) -> None:
         self.mains_power = TK_MAINS_POWER_NOT_PRESENT
         self.pump_relay = TK_PUMP_RELAY_INACTIVE
+        self.publisher = TelemetryPublisher.from_env()
 
     def unix_time_ms(self) -> int:
         return int(time.time() * 1000)
@@ -43,13 +45,7 @@ class PythonSim:
         return 1
 
     def publish_telemetry(self, telemetry: Telemetry) -> int:
-        value = telemetry.contents
+        return self.publisher.publish(telemetry)
 
-        print(
-            "[python] publish telemetry "
-            f"mains_power={value.mains_power} "
-            f"pump_relay={value.pump_relay} "
-            f"unix_time_ms={value.unix_time_ms}"
-        )
-
-        return 1
+    def close(self) -> None:
+        self.publisher.close()

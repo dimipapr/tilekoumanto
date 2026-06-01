@@ -1,4 +1,7 @@
 import threading
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 from app.simulator import PythonSim
 from ffi.core import (
@@ -13,6 +16,9 @@ from ffi.core import (
 
 
 def main() -> int:
+    target_root = Path(__file__).resolve().parents[1]
+    load_dotenv(target_root / ".env")
+
     core = Core()
     sim = PythonSim()
     stop_requested = threading.Event()
@@ -60,6 +66,8 @@ def main() -> int:
         stop_requested.set()
         core_thread.join()
         print("[python] simulator stopped")
+    finally:
+        sim.close()
 
     return 0
 
