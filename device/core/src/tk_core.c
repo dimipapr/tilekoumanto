@@ -84,6 +84,18 @@ int tk_core_run(const tk_platform_t *platform)
         "fault",
         telemetry.unix_time_ms
     );
+
+    if (platform->publish_telemetry == 0) {
+        tk_log(platform, "publish_telemetry callback missing");
+        return 0;
+    }
+
+    if (platform->publish_telemetry(&telemetry) == 0) {
+        tk_log(platform, "publish_telemetry failed");
+        return 0;
+    }
+
+    tk_log(platform, "publish_telemetry complete");
    
 
     tk_log(platform, "core platform time ms: %" PRIu64, now);

@@ -32,6 +32,7 @@ class Telemetry(ctypes.Structure):
 LOG_CB = ctypes.CFUNCTYPE(None, ctypes.c_char_p)
 UNIX_TIME_MS_CB = ctypes.CFUNCTYPE(ctypes.c_uint64)
 READ_TELEMETRY_CB = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.POINTER(Telemetry))
+PUBLISH_TELEMETRY_CB = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.POINTER(Telemetry))
 
 
 class Platform(ctypes.Structure):
@@ -39,6 +40,7 @@ class Platform(ctypes.Structure):
         ("log", LOG_CB),
         ("unix_time_ms", UNIX_TIME_MS_CB),
         ("read_telemetry", READ_TELEMETRY_CB),
+        ("publish_telemetry", PUBLISH_TELEMETRY_CB),
     ]
 
 
