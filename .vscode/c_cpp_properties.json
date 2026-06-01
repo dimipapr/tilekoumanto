@@ -1,25 +1,12 @@
 {
-    "configurations": [
-        {
-            "name": "Simulator (Linux)",
-            "includePath": [
-                "${workspaceFolder}/**"
-            ],
-            "compilerPath": "/usr/bin/gcc",
-            "cStandard": "c99",
-            "intelliSenseMode": "linux-gcc-x64",
-            "compileCommands": "${workspaceFolder}/device/build_simulator/compile_commands.json"
-        },
-        {
-            "name": "STM32 (Hardware)",
-            "includePath": [
-                "${workspaceFolder}/**"
-            ],
-            "compilerPath": "/usr/bin/arm-none-eabi-gcc",
-            "cStandard": "c99",
-            "intelliSenseMode": "linux-gcc-arm",
-            "compileCommands": "${workspaceFolder}/device/build_stm32/compile_commands.json"
-        }
-    ],
-    "version": 4
+  "configurations": [
+    {
+      "name": "STM32",
+      "compileCommands": "${workspaceFolder}/device/targets/stm32/build/debug/compile_commands.json",
+      "intelliSenseMode": "linux-gcc-arm",
+      "compilerPath": "arm-none-eabi-gcc",
+      "cStandard": "c99"
+    }
+  ],
+  "version": 4
 }

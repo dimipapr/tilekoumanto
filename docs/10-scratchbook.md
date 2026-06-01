@@ -678,3 +678,54 @@ Possible next steps after blinky succeeds:
 8. Add UART communication with the U111-B.
 9. Add modem bring-up.
 10. Add MQTT publish path.
+
+## Device code organization direction
+
+Current direction:
+
+Use a `core` and `targets` split under `device/`:
+
+```text
+device/
+├── core/
+└── targets/
+    ├── stm32/
+    └── simulator/
+```
+
+## Core/runtime ownership
+
+Current direction:
+
+The shared device core owns the application runtime.
+
+Target-specific code initializes the hardware/platform, provides target implementations through a function-pointer interface, and passes control to core.
+
+The target does not start the FreeRTOS scheduler directly.
+
+Target responsibilities:
+
+- MCU/board initialization
+- clock setup
+- GPIO/UART/peripheral setup
+- FreeRTOS port/config/heap support
+- target-specific driver implementations
+- platform function table creation
+- call `tk_core_run(&platform)`
+
+Core responsibilities:
+
+- validate/store the platform interface
+- create FreeRTOS tasks
+- create queues/timers/events
+- own the device application task graph
+- start the FreeRTOS scheduler
+- run input sampling and telemetry scheduling logic
+- call target-provided functions through the platform interface
+
+Rule:
+
+```text
+target owns hardware/platform setup
+core owns application runtime
+```

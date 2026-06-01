@@ -49,3 +49,6 @@ API response shapes should be represented with small Pydantic models where usefu
 For the MVP, Pydantic is used to keep response serialization and documented API shape aligned.
 
 The lightweight `docs/contracts/openapi.yaml` is removed for now.
+
+## C standard
+C99

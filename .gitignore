@@ -5,3 +5,5 @@ __pycache__/
 .env
 operator/restart-prompts/*
 !operator/restart-prompts/.gitkeep
+device/targets/stm32/build/
+device/core/build/
