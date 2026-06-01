@@ -1,9 +1,11 @@
 #ifndef TK_PLATFORM_H
 #define TK_PLATFORM_H
 
-typedef struct 
-{
-    void (*toggle_status_led)(void);
-}tk_platform_t;
+#include <stdint.h>
+
+typedef struct {
+    void (*log)(const char *message);
+    uint64_t (*unix_time_ms)(void);
+} tk_platform_t;
 
 #endif
