@@ -1,3 +1,5 @@
+// device/core/include/tk_platform.h
+
 #ifndef TK_PLATFORM_H
 #define TK_PLATFORM_H
 

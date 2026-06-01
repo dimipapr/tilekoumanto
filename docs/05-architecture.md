@@ -185,4 +185,4 @@ Field installation
 
 The device-side implementation is split into a shared C core and pluggable targets.
 
-Detailed device architecture is documented in `09-device-subsystem-design.md`.
+Detailed device architecture is documented in `09-device-subsystem.md`.

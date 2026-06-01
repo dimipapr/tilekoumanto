@@ -1,3 +1,5 @@
+// device/core/include/tk_types.h
+
 #ifndef TK_TYPES_H
 #define TK_TYPES_H
 
