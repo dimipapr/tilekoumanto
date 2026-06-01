@@ -16,11 +16,25 @@
 
 static int g_has_last_published = 0;
 static tk_telemetry_t g_last_published;
+static TickType_t g_last_publish_tick = 0;
 
 static const char *tk_mains_power_to_string(tk_mains_power_state_t state);
 static const char *tk_pump_relay_to_string(tk_pump_relay_state_t state);
 
 static int tk_process_telemetry_once(const tk_platform_t *platform);
+static uint64_t tk_elapsed_ticks_to_ms(TickType_t start_tick,TickType_t end_tick);
+
+static uint64_t tk_elapsed_ticks_to_ms(
+    TickType_t start_tick,
+    TickType_t end_tick
+)
+{
+    TickType_t elapsed_ticks;
+
+    elapsed_ticks = end_tick - start_tick;
+
+    return (uint64_t)elapsed_ticks * (uint64_t)portTICK_PERIOD_MS;
+}
 
 static const char *tk_mains_power_to_string(tk_mains_power_state_t state)
 {
@@ -52,30 +66,18 @@ static const char *tk_pump_relay_to_string(tk_pump_relay_state_t state)
 
 int tk_should_publish_telemetry(
     const tk_telemetry_t *last_published,
-    const tk_telemetry_t *current
-)
-{
-    uint64_t elapsed_time_ms;
+    const tk_telemetry_t *current,
+    uint64_t time_since_last_publish_ms
+){
+    if (current == 0) {return 0;}
 
-    if (current == 0) {
-        return 0;
-    }
+    if (last_published == 0) {return 1;}
 
-    if (last_published == 0) {
-        return 1;
-    }
+    if (last_published->mains_power != current->mains_power) {return 1;}
 
-    if (last_published->mains_power != current->mains_power) {
-        return 1;
-    }
+    if (last_published->pump_relay != current->pump_relay) {return 1;}
 
-    if (last_published->pump_relay != current->pump_relay) {
-        return 1;
-    }
-
-    elapsed_time_ms = current->unix_time_ms - last_published->unix_time_ms;
-
-    if (elapsed_time_ms >= TK_PUBLISH_TIMEOUT_MS) {
+    if (time_since_last_publish_ms >= TK_PUBLISH_TIMEOUT_MS) {
         return 1;
     }
 
@@ -84,6 +86,8 @@ int tk_should_publish_telemetry(
 
 static int tk_process_telemetry_once(const tk_platform_t *platform)
 {
+    TickType_t current_tick;
+    uint64_t time_since_last_publish_ms;
     tk_telemetry_t telemetry = {0};
 
     if (platform == 0) {
@@ -108,9 +112,21 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
         telemetry.unix_time_ms
     );
 
+    current_tick = xTaskGetTickCount();
+
+    if (g_has_last_published) {
+        time_since_last_publish_ms = tk_elapsed_ticks_to_ms(
+            g_last_publish_tick,
+            current_tick
+        );
+    } else {
+        time_since_last_publish_ms = 0;
+    }
+
     if (!tk_should_publish_telemetry(
             g_has_last_published ? &g_last_published : 0,
-            &telemetry
+            &telemetry,
+            time_since_last_publish_ms
         )) {
         tk_log(platform, "publish_telemetry skipped");
         return 1;
@@ -127,6 +143,7 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
     }
 
     g_last_published = telemetry;
+    g_last_publish_tick = current_tick;
     g_has_last_published = 1;
 
     tk_log(platform, "publish_telemetry complete");
