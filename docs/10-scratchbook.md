@@ -12,4 +12,5 @@ Move stable facts into the appropriate documentation file when they are implemen
 
 manage sim hogging a core when it runs
 
+## operator
 create makefiles or another cleverer :D way to manage sysyem initialization/build/run/testing

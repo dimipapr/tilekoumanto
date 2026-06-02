@@ -136,6 +136,14 @@ The current core-created application task is the telemetry task.
 
 Telemetry message timestamps remain device/event timestamps. Publish timeout behavior now uses runtime elapsed time rather than subtracting telemetry message timestamps.
 
+## Device runtime idle behavior
+
+FreeRTOS idle-hook support is enabled.
+
+Idle behavior is target-owned. Each FreeRTOS target must provide its own `vApplicationIdleHook()` implementation.
+
+The Python simulator target provides a POSIX idle hook that sleeps briefly while idle to avoid busy-spinning a CPU core.
+
 ## Testing state
 
 The project now has an initial lightweight test framework across the current MVP stack.
@@ -147,6 +155,10 @@ The Python simulator target uses a small pytest baseline for dependency-free sim
 The C device core has a CTest baseline. Pure dependency-free C logic is built in a separate `tilekoumanto_logic` target so it can be tested without linking FreeRTOS.
 
 The current tests are intentionally small framework/bootstrap tests. Broader behavior-specific coverage is deferred until the relevant behavior is stable enough to protect.
+
+## Developer tooling
+
+A top-level `Makefile` provides common local development commands for stack management, per-service logs, Django tests, Python simulator build/run/tests, CTest, aggregate tests, and cleanup.
 
 ## Known follow-up implementation areas
 

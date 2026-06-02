@@ -172,3 +172,13 @@ The target is intended for pure C code that does not depend on FreeRTOS, STM32 A
 The runtime-oriented `tilekoumanto_core` target links against `tilekoumanto_logic` and the FreeRTOS kernel.
 
 This keeps pure logic easy to unit test while avoiding many small feature-specific logic libraries too early.
+
+## FreeRTOS idle hook ownership
+
+Decision: FreeRTOS targets must provide their own `vApplicationIdleHook()` implementation.
+
+The shared core enables idle-hook support but does not define target idle behavior.
+
+The Python simulator target provides a POSIX idle hook that sleeps briefly to avoid busy-spinning a CPU core.
+
+STM32 and future targets should provide their own explicit idle-hook behavior.

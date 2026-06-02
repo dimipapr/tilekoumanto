@@ -270,3 +270,15 @@ Added a generic tilekoumanto_logic CMake target for dependency-free C logic.
 tilekoumanto_core now links against:`tilekoumanto_logic, freertos_kernel`
 
 Added an initial CTest-based C test executable to verify compiling linking and calling pure C logic
+
+## FreeRTOS idle behavior
+
+FreeRTOS idle-hook support is enabled.
+
+Idle behavior is target-owned.
+
+Each FreeRTOS target must provide its own `vApplicationIdleHook()` implementation.
+
+The Python simulator target provides a POSIX idle hook that sleeps briefly while idle to avoid busy-spinning a CPU core.
+
+STM32 and future targets should provide their own explicit idle-hook behavior.

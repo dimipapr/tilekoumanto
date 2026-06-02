@@ -13,6 +13,14 @@ add_subdirectory(
     ${CMAKE_CURRENT_BINARY_DIR}/core
 )
 
+target_sources(tilekoumanto_core PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/platform/tk_freertos_hooks.c
+)
+
+target_compile_definitions(tilekoumanto_core PRIVATE
+    _POSIX_C_SOURCE=200809L
+)
+
 set_target_properties(tilekoumanto_core PROPERTIES
     OUTPUT_NAME tilekoumanto_core
 )
