@@ -2,19 +2,19 @@
 
 ## Current focus
 
-Bootstrap a lightweight testing framework across the current MVP stack.
-
-The goal is not broad coverage yet. The goal is to make it easy to add tests later once behavior is stable enough to protect.
+Clarify and protect the basic device telemetry publishing model.
 
 ## Immediate next actions
 
-1. Define the minimal device telemetry decision behavior that should be stable now.
+1. Decide the next small boundary around publish-selected telemetry.
 
-   Start with FreeRTOS-free C logic only:
-   - first sample publishes
-   - unchanged sample before timeout does not publish
-   - mains power change publishes
-   - pump relay change publishes
-   - timeout elapsed publishes
+   Current known behavior:
 
-   Lock this behavior down with C tests before adding new device features.
+   - telemetry selected for publishing gets `meta.seq`
+   - skipped samples do not increment `seq`
+   - `last_published` currently means last successful publish
+   - retry, pending, in-flight, and publisher-task behavior are not settled yet
+
+2. Add focused tests around the current sequence behavior before changing the publish architecture.
+
+3. Do not document or implement queue/publisher-task behavior until the model is clearer.

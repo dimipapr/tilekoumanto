@@ -117,6 +117,7 @@ class TelemetryPublisher:
         payload = {
             "meta": {
                 "unix_time_ms": int(value.unix_time_ms),
+                "seq": int(value.seq),
             },
             "payload": {
                 "readings": {

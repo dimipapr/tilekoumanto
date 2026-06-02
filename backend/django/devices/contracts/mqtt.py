@@ -2,7 +2,7 @@
 
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt
+from pydantic import BaseModel, Field, ConfigDict, StrictInt
 
 class MainsPowerState(StrEnum):
     PRESENT = "present"
@@ -25,6 +25,7 @@ class MqttMessageMeta(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     unix_time_ms: StrictInt
+    seq: StrictInt = Field(ge=0, le=4294967295)
 
 class PumpTelemetryReadings(BaseModel):
     model_config = ConfigDict(extra="forbid")

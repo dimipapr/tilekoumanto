@@ -1,3 +1,5 @@
+# device/targets/python-sim/ffi/core.py
+
 import ctypes
 from pathlib import Path
 
@@ -26,6 +28,7 @@ class Telemetry(ctypes.Structure):
         ("mains_power", ctypes.c_int),
         ("pump_relay", ctypes.c_int),
         ("unix_time_ms", ctypes.c_uint64),
+        ("seq", ctypes.c_uint32),
     ]
 
 

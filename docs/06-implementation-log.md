@@ -282,3 +282,32 @@ Each FreeRTOS target must provide its own `vApplicationIdleHook()` implementatio
 The Python simulator target provides a POSIX idle hook that sleeps briefly while idle to avoid busy-spinning a CPU core.
 
 STM32 and future targets should provide their own explicit idle-hook behavior.
+
+## 2026-06-02 Telemetry sequence number
+
+Added a device-local telemetry sequence number to outgoing pump telemetry.
+
+The shared C telemetry sample now carries a `seq` field.
+
+The telemetry task assigns `seq` only after a sample is selected for publishing by the current publish-decision logic.
+
+Skipped telemetry samples do not increment the sequence number.
+
+The Python simulator FFI struct was updated to match the C telemetry shape.
+
+The Python simulator publisher now includes the sequence number in the MQTT message metadata:
+
+```json
+{
+  "meta": {
+    "unix_time_ms": 1780432901198,
+    "seq": 0
+  },
+  "payload": {
+    "readings": {
+      "mains_power": "not_present",
+      "pump_relay": "active"
+    },
+    "faults": []
+  }
+}

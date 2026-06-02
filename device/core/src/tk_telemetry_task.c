@@ -16,6 +16,7 @@
 static int g_has_last_published = 0;
 static tk_telemetry_t g_last_published;
 static TickType_t g_last_publish_tick = 0;
+static uint32_t g_next_telemetry_seq = 1;
 
 static const char *tk_mains_power_to_string(tk_mains_power_state_t state);
 static const char *tk_pump_relay_to_string(tk_pump_relay_state_t state);
@@ -109,6 +110,8 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
         tk_log(platform, "publish_telemetry skipped");
         return 1;
     }
+    
+    telemetry.seq = g_next_telemetry_seq++;
 
     if (platform->publish_telemetry == 0) {
         tk_log(platform, "publish_telemetry callback missing");
@@ -124,7 +127,11 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
     g_last_publish_tick = current_tick;
     g_has_last_published = 1;
 
-    tk_log(platform, "publish_telemetry complete");
+    tk_log(
+    platform,
+    "publish_telemetry complete seq:%" PRIu32,
+    telemetry.seq
+);
 
     return 1;
 }

@@ -21,6 +21,7 @@ typedef struct {
     tk_mains_power_state_t mains_power;
     tk_pump_relay_state_t pump_relay;
     uint64_t unix_time_ms;
+    uint32_t seq;
 } tk_telemetry_t;
 
 #endif
