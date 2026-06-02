@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This document captures the current design direction for the device-side subsystem.
+This document describes the current device-side subsystem design.
 
-The device subsystem is responsible for observing field-side pump signals, turning those observations into device telemetry, and publishing that telemetry to the backend.
+The device subsystem observes field-side pump signals, converts those observations into telemetry, and publishes that telemetry to the backend.
 
 The current implementation focus is telemetry-only monitoring.
 
@@ -16,7 +16,7 @@ The current development target is:
 
 ```text
 NUCLEO-F446RE
-````
+```
 
 The current cellular module direction is:
 
@@ -24,11 +24,11 @@ The current cellular module direction is:
 M5Stack U111-B
 ```
 
-The NUCLEO-F446RE is used as a capable STM32 development target for exploration. The final product hardware may be reduced later once the firmware and product requirements are clearer.
+The NUCLEO-F446RE is used as a capable STM32 development target for exploration. Final product hardware may be reduced later once firmware and product requirements are clearer.
 
 ## Current signal model
 
-The first field signal source is an auxiliary/dry contact from external electrical equipment.
+The first field signal source is an auxiliary or dry contact from external electrical equipment.
 
 Current monitored states:
 
@@ -44,17 +44,16 @@ mains_power: present | not_present | fault
 pump_relay: active | inactive | fault
 ```
 
-The telemetry contract includes a fault list, but fault publishing is still minimal.
+The current MVP does not directly measure:
 
-The authoritative fault schema lives in the backend MQTT contract:
+* per-phase voltage
+* per-phase current
+* hydraulic pressure
+* dry-run risk
+* bearing wear
+* water flow
 
-```text
-backend/django/devices/contracts/mqtt.py
-```
-
-The current MVP does not directly measure per-phase voltage, per-phase current, imbalance, dry-run risk, or bearing wear.
-
-Those are possible later extensions once the basic device-to-backend telemetry path is stable.
+Those are possible later extensions after the basic device-to-backend telemetry path is stable.
 
 ## Telemetry behavior
 
@@ -67,7 +66,11 @@ The device publishes telemetry when any of the following is true:
 
 The device does not publish every input sample if the state is unchanged and the publish timeout has not elapsed.
 
-The current telemetry loop period is an implementation detail and may change as the device runtime matures.
+Telemetry message timestamps and runtime elapsed time are separate.
+
+`tk_telemetry_t.unix_time_ms` is the telemetry message or event timestamp.
+
+Publish timeout decisions use elapsed runtime time since the last successful publish, not subtraction between telemetry message timestamps.
 
 ## Runtime architecture
 
@@ -81,7 +84,9 @@ device/
     └── stm32/
 ```
 
-The shared core owns task creation and scheduler startup.
+The shared device core owns the application runtime model.
+
+Current targets provide platform-specific setup and callbacks, then hand control to the core.
 
 The current application task graph contains one task:
 
@@ -89,20 +94,52 @@ The current application task graph contains one task:
 telemetry task
 ```
 
-Targets own platform implementation and provide callbacks to the core.
+Targets should not duplicate core device decision logic.
 
-The core is intended to be the shared device brain. Targets should not duplicate device decision logic.
+## C layering
+
+The device core separates dependency-free logic from runtime/task integration.
+
+Current CMake layering:
+
+```text
+tilekoumanto_logic
+  Pure C logic.
+  No FreeRTOS dependency.
+  No STM32 dependency.
+  No Python dependency.
+  No MQTT dependency.
+  Intended to be easy to unit test.
+
+tilekoumanto_core
+  Runtime-oriented core library.
+  Links tilekoumanto_logic.
+  Links FreeRTOS.
+  Owns task/runtime integration.
+```
+
+Current source split:
+
+```text
+device/core/src/tk_telemetry.c
+  Telemetry decision logic.
+
+device/core/src/tk_telemetry_task.c
+  FreeRTOS telemetry task/runtime adapter.
+```
+
+The purpose of this split is to keep device decision logic testable without linking the FreeRTOS runtime.
 
 ## Shared core responsibilities
 
 The shared C core is responsible for:
 
-* owning the FreeRTOS runtime model
+* owning the FreeRTOS application runtime model
 * exposing `tk_core_run()` as the target handoff entrypoint
 * creating core-owned tasks
-* running the telemetry loop
+* running the telemetry task
 * reading telemetry through the platform interface
-* deciding whether telemetry should be published
+* calling dependency-free telemetry logic to decide whether telemetry should be published
 * remembering the last successfully published telemetry sample
 * calling target-provided publish behavior
 
@@ -116,26 +153,6 @@ The core must not depend on:
 * simulator-specific behavior
 * backend database details
 
-## Shared core logic split
-
-The shared core now separates dependency-free logic from runtime/task integration.
-
-Current C layering:
-```text
-tilekoumanto_logic
-  Pure C logic with no FreeRTOS dependency.
-
-tilekoumanto_core
-  Runtime-oriented core library.
-  Links `tilekoumanto_logic` and FreeRTOS.
-```
-Current source split:
-device/core/src/tk_telemetry.c
-  Telemetry decision logic.
-
-device/core/src/tk_telemetry_task.c
-  FreeRTOS telemetry task/runtime adapter.
-
 ## Target responsibilities
 
 Targets are responsible for:
@@ -147,7 +164,7 @@ Targets are responsible for:
 * publishing telemetry through the target transport
 * handling target-specific shutdown behavior when applicable
 
-The target initializes enough platform state for the core to run, then calls:
+A target initializes enough platform state for the core to run, then calls:
 
 ```c
 tk_core_run(&platform);
@@ -186,7 +203,8 @@ read_telemetry
 
 publish_telemetry
   Target-provided publish operation.
-  The core decides when to publish; the target decides how to publish.
+  The core decides when to publish.
+  The target decides how to publish.
 
 should_stop
   Target-provided stop request.
@@ -228,26 +246,54 @@ tk_pump_relay_state_t:
   TK_PUMP_RELAY_FAULT
 ```
 
-Fault details are currently part of the MQTT/backend contract direction, but the C telemetry struct is still minimal.
+Fault details are part of the MQTT/backend contract direction, but the C telemetry struct is still minimal.
+
+## Telemetry logic
+
+The current dependency-free telemetry logic is:
+
+```c
+int tk_should_publish_telemetry(
+    const tk_telemetry_t *last_published,
+    const tk_telemetry_t *current,
+    uint64_t time_since_last_publish_ms
+);
+```
+
+The function returns true when the current telemetry sample should be published.
+
+Current behavior:
+
+* returns false if the current sample pointer is missing
+* returns true if there is no previous published sample
+* returns true if `mains_power` changed
+* returns true if `pump_relay` changed
+* returns true if the publish timeout elapsed
+* otherwise returns false
+
+This logic belongs in `tilekoumanto_logic`.
+
+FreeRTOS task scheduling, tick conversion, platform callbacks, and logging belong in the telemetry task/runtime adapter.
 
 ## FreeRTOS ownership
 
 The shared core owns the FreeRTOS application runtime.
 
-Core responsibilities include:
+Core runtime responsibilities include:
 
 * task creation
 * scheduler start
 * task loop timing
 * periodic telemetry processing
 
-The target provides the FreeRTOS port/config/build support needed for the target build, but the application task graph belongs to core.
+The target provides the FreeRTOS port, configuration, and build support needed for the target build.
 
 Current direction:
 
 ```text
 FreeRTOS runtime model: core-owned
 hardware/platform setup: target-owned
+dependency-free decision logic: tilekoumanto_logic
 ```
 
 ## Python simulator target
@@ -263,7 +309,7 @@ The simulator currently:
 * publishes telemetry over MQTT/mTLS
 * supports clean shutdown through the `should_stop` callback
 
-The simulator is currently useful for validating:
+The simulator is useful for validating:
 
 * the shared C core runtime
 * FreeRTOS POSIX execution
@@ -359,7 +405,9 @@ TK_MQTT_PORT=8883
 TK_CERTS_ROOT=/path/to/certs
 ```
 
-The device UUID is not currently included in MQTT message metadata. The backend obtains the device UUID from the topic.
+The device UUID is not currently included in MQTT message metadata.
+
+The backend obtains the device UUID from the MQTT topic.
 
 ## Current backend-facing telemetry direction
 
@@ -379,6 +427,37 @@ The Python simulator publisher should stay aligned with that contract:
 device/targets/python-sim/app/publisher.py
 ```
 
+## Device-side testing
+
+The device core now has an initial CTest baseline.
+
+The current C test setup is intentionally small.
+
+Current direction:
+
+```text
+tilekoumanto_logic
+  Unit-testable C logic.
+
+tilekoumanto_core
+  Runtime integration.
+  Not the first target for unit tests.
+```
+
+The first device-side tests should focus on dependency-free logic.
+
+Tests should not require:
+
+* FreeRTOS scheduling
+* STM32 hardware
+* Python runtime
+* MQTT
+* certificates
+* Docker services
+* backend services
+
+Runtime, target, and full-stack integration tests can be added later when the relevant behavior is stable enough to protect.
+
 ## Open implementation areas
 
 Known device-subsystem follow-ups:
@@ -392,4 +471,3 @@ Known device-subsystem follow-ups:
 * implement real modem/network publishing
 * define how device identity is stored on embedded hardware
 * define how firmware logs are handled on STM32
-
