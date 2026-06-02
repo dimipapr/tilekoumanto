@@ -8,28 +8,13 @@ The goal is not broad coverage yet. The goal is to make it easy to add tests lat
 
 ## Immediate next actions
 
-1. Add or confirm backend Django test execution.
+1. Define the minimal device telemetry decision behavior that should be stable now.
 
-   Add one minimal sample test under the Django devices app.
+   Start with FreeRTOS-free C logic only:
+   - first sample publishes
+   - unchanged sample before timeout does not publish
+   - mains power change publishes
+   - pump relay change publishes
+   - timeout elapsed publishes
 
-   The sample test should prove the Django test runner works without locking down unstable behavior.
-
-2. Add or confirm Python simulator test execution.
-
-   Add one minimal sample test for simulator-side Python code.
-
-   The sample test should avoid depending on live MQTT, certificates, Docker services, or random simulator behavior.
-
-3. Add or confirm C device-core test execution.
-
-   Add one minimal sample test for FreeRTOS-free C code.
-
-   The sample test should establish the C test build/run path before adding real telemetry policy tests.
-
-4. Decide where integration tests will live.
-
-   Do not implement full-stack integration tests yet.
-
-   Create only a placeholder or documented location for later tests involving MQTT, Docker Compose, mTLS, and backend ingestion.
-
-5. After the framework exists, decide which current behaviors are stable enough to test.
+   Lock this behavior down with C tests before adding new device features.

@@ -134,7 +134,7 @@ Confirmed that the device admin derives an inspection-only connection status fro
 
 Confirmed that `devices/tests.py` currently has no implemented tests.
 
-## 2026-05-32 Latest-state API implementation
+## 2026-05-31 Latest-state API implementation
 
 Implemented `GET /api/devices/{device_uuid}/state`.
 
@@ -255,7 +255,7 @@ The publish-decision function now receives elapsed milliseconds as an explicit `
 
 Split FreeRTOS into a separate CMake target and tightened compile warnings for project core code.
 
-## 2026-06-02 Testing framework scafolding
+## 2026-06-02 Testing framework scaffolding
 
 Started a lightweight test framework across the current MVP stack.
 
@@ -271,7 +271,7 @@ tilekoumanto_core now links against:`tilekoumanto_logic, freertos_kernel`
 
 Added an initial CTest-based C test executable to verify compiling linking and calling pure C logic
 
-## FreeRTOS idle behavior
+## 2026-06-02 FreeRTOS idle behavior
 
 FreeRTOS idle-hook support is enabled.
 

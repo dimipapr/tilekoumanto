@@ -57,7 +57,7 @@ The project is safe to pause when future work can continue by reading `01-projec
 
 ## Current project phase
 
-Documentation reset and MVP narrowing.
+Cant really update it every time...
 
 ## Resume here
 
