@@ -30,3 +30,11 @@ Open question: what should the STM32 logging sink be during bring-up and later p
 ## Backend fault API
 
 Open question: if faults get a dedicated model, how should latest-state and historical APIs expose them?
+
+## Testing scope
+
+Open question: which current behaviors are stable enough to protect with behavior-specific tests after the initial test framework is in place?
+
+## C test framework
+
+Open question: should device-core C tests use a minimal custom test runner or an external C test framework?

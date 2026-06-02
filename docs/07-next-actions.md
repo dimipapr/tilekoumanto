@@ -2,83 +2,34 @@
 
 ## Current focus
 
-Stabilize the shared device core and Python simulator path before returning to STM32 integration.
+Bootstrap a lightweight testing framework across the current MVP stack.
 
-The current active path is:
-
-```text
-python-sim target
-→ shared C core through FFI
-→ MQTT over mTLS
-→ Django MQTT catcher
-→ backend storage
-```
+The goal is not broad coverage yet. The goal is to make it easy to add tests later once behavior is stable enough to protect.
 
 ## Immediate next actions
 
-1. Separate FreeRTOS-free telemetry policy from the telemetry runtime task.
+1. Add or confirm backend Django test execution.
 
-   Current state:
+   Add one minimal sample test under the Django devices app.
 
-   * `tk_core.c` owns core setup, task creation, scheduler startup, logging, and stop handling.
-   * Telemetry behavior has been moved out of `tk_core.c`.
-   * Telemetry publish timeout now uses elapsed runtime time passed as `uint64_t` milliseconds.
-   * `tk_should_publish_telemetry()` is already close to FreeRTOS-free core policy.
+   The sample test should prove the Django test runner works without locking down unstable behavior.
 
-   Next cleanup:
+2. Add or confirm Python simulator test execution.
 
-   * Keep FreeRTOS-free telemetry decision logic separate from the FreeRTOS task/runtime adapter.
-   * Keep `tk_should_publish_telemetry()` independent of FreeRTOS types.
-   * Move or isolate FreeRTOS-specific task logic, tick conversion, and platform callback usage from pure telemetry policy.
-   * Preserve current behavior while improving testability and module boundaries.
+   Add one minimal sample test for simulator-side Python code.
 
-   Possible file direction:
+   The sample test should avoid depending on live MQTT, certificates, Docker services, or random simulator behavior.
 
-   ```text
-   device/core/src/tk_telemetry.c          # FreeRTOS-free telemetry policy
-   device/core/src/tk_telemetry_task.c     # FreeRTOS task/runtime adapter
-   device/core/include/tk_telemetry.h
+3. Add or confirm C device-core test execution.
 
+   Add one minimal sample test for FreeRTOS-free C code.
 
-2. Add deterministic Python simulator scenarios.
+   The sample test should establish the C test build/run path before adding real telemetry policy tests.
 
-   Random input generation is useful for smoke testing, but repeatable scenarios are needed for validation.
+4. Decide where integration tests will live.
 
-   Initial scenarios:
+   Do not implement full-stack integration tests yet.
 
-   * steady state
-   * mains power loss
-   * mains power restore
-   * pump relay active
-   * pump relay inactive
-   * unreadable mains input
-   * unreadable pump relay input
+   Create only a placeholder or documented location for later tests involving MQTT, Docker Compose, mTLS, and backend ingestion.
 
-3. Add simulator fault generation.
-
-   The backend contract supports a fault list, but the simulator currently publishes no faults.
-
-4. Decide how faults should be represented beyond raw-message retention.
-
-   Current state:
-
-   * faults are validated
-   * faults are retained in `DeviceMessageRaw.payload`
-   * faults are not projected into a dedicated backend model
-
-5. Return to STM32 integration.
-
-   The STM32 target should implement `tk_platform_t` and hand control to the shared core through `tk_core_run()`.
-
-## Known follow-up areas
-
-* MQTT catcher cleanup
-* ingress tests
-* stale-state behavior
-* latest-state API alignment with the OpenAPI contract
-* raw-message retention policy
-* deterministic simulator scenarios
-* simulator fault generation
-* STM32 shared-core integration
-* real input debouncing
-* real modem/network publishing
+5. After the framework exists, decide which current behaviors are stable enough to test.
