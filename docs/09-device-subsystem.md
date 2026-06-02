@@ -116,6 +116,26 @@ The core must not depend on:
 * simulator-specific behavior
 * backend database details
 
+## Shared core logic split
+
+The shared core now separates dependency-free logic from runtime/task integration.
+
+Current C layering:
+```text
+tilekoumanto_logic
+  Pure C logic with no FreeRTOS dependency.
+
+tilekoumanto_core
+  Runtime-oriented core library.
+  Links `tilekoumanto_logic` and FreeRTOS.
+```
+Current source split:
+device/core/src/tk_telemetry.c
+  Telemetry decision logic.
+
+device/core/src/tk_telemetry_task.c
+  FreeRTOS telemetry task/runtime adapter.
+
 ## Target responsibilities
 
 Targets are responsible for:

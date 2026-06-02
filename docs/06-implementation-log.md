@@ -254,3 +254,19 @@ Changed telemetry publish timeout handling so timeout decisions use elapsed runt
 The publish-decision function now receives elapsed milliseconds as an explicit `uint64_t`, keeping the policy independent of FreeRTOS-specific types.
 
 Split FreeRTOS into a separate CMake target and tightened compile warnings for project core code.
+
+## 2026-06-02 Testing framework scafolding
+
+Started a lightweight test framework across the current MVP stack.
+
+Django testing was kept on Django's built-in test runner. The existing latest-state API tests were cleaned up and kept as the initial backend test baseline.
+
+Added a small Python simulator pytest baseline with a dependency-free test. The simulator test avoids live MQTT, certificates, Docker services, random simulator behavior, and the compiled C core library.
+
+Split the C device core so pure telemetry decision logic is separated from the FreeRTOS telemetry task/runtime adapter.
+
+Added a generic tilekoumanto_logic CMake target for dependency-free C logic.
+
+tilekoumanto_core now links against:`tilekoumanto_logic, freertos_kernel`
+
+Added an initial CTest-based C test executable to verify compiling linking and calling pure C logic

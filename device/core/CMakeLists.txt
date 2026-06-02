@@ -25,9 +25,38 @@ target_compile_definitions(freertos_kernel PRIVATE
     _POSIX_C_SOURCE=200809L
 )
 
+add_library(tilekoumanto_logic STATIC
+    src/tk_telemetry.c
+)
+
+set_target_properties(tilekoumanto_logic PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
+
+target_include_directories(tilekoumanto_logic PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_features(tilekoumanto_logic PUBLIC c_std_99)
+
+target_compile_options(tilekoumanto_logic PRIVATE
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Werror=implicit-function-declaration
+    -Werror=incompatible-pointer-types
+    -Werror=return-type
+    -Werror
+    -Wshadow
+    -Wconversion
+    -Wsign-conversion
+    -Wcast-qual
+    -Wwrite-strings
+)
+
 add_library(tilekoumanto_core
     src/tk_core.c
-    src/tk_telemetry.c
+    src/tk_telemetry_task.c
 )
 
 set_target_properties(tilekoumanto_core PROPERTIES
@@ -55,4 +84,25 @@ target_compile_options(tilekoumanto_core PRIVATE
     -Wwrite-strings
 )
 
-target_link_libraries(tilekoumanto_core PRIVATE freertos_kernel)
+target_link_libraries(
+    tilekoumanto_core PRIVATE 
+    tilekoumanto_logic
+    freertos_kernel
+)
+
+include(CTest)
+
+if(BUILD_TESTING)
+    add_executable(test_logic
+        tests/test_logic.c
+    )
+
+    target_link_libraries(test_logic PRIVATE
+        tilekoumanto_logic
+    )
+
+    add_test(
+        NAME test_logic
+        COMMAND test_logic
+    )
+endif()

@@ -162,8 +162,13 @@ The telemetry task computes elapsed time since the last successful publish using
 
 The publish-decision policy remains independent of FreeRTOS-specific types.
 
-## Publish timeout time source
 
-Current publish timeout uses telemetry timestamps.
+## C logic test target
 
-Open question: should publish timeout eventually use FreeRTOS tick time instead of wall-clock Unix time?
+Decision: dependency-free C logic lives in a generic `tilekoumanto_logic` CMake target.
+
+The target is intended for pure C code that does not depend on FreeRTOS, STM32 APIs, Python, MQTT, or platform callbacks.
+
+The runtime-oriented `tilekoumanto_core` target links against `tilekoumanto_logic` and the FreeRTOS kernel.
+
+This keeps pure logic easy to unit test while avoiding many small feature-specific logic libraries too early.

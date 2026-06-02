@@ -136,6 +136,18 @@ The current core-created application task is the telemetry task.
 
 Telemetry message timestamps remain device/event timestamps. Publish timeout behavior now uses runtime elapsed time rather than subtracting telemetry message timestamps.
 
+## Testing state
+
+The project now has an initial lightweight test framework across the current MVP stack.
+
+Django uses Django's built-in test runner. The current backend test baseline covers the latest-state API behavior.
+
+The Python simulator target uses a small pytest baseline for dependency-free simulator-side code. The initial simulator test avoids live MQTT, certificates, Docker services, and the compiled C core library.
+
+The C device core has a CTest baseline. Pure dependency-free C logic is built in a separate `tilekoumanto_logic` target so it can be tested without linking FreeRTOS.
+
+The current tests are intentionally small framework/bootstrap tests. Broader behavior-specific coverage is deferred until the relevant behavior is stable enough to protect.
+
 ## Known follow-up implementation areas
 
 * deterministic Python simulator scenarios
