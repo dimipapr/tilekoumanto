@@ -132,13 +132,21 @@ This page is operator/developer tooling and is not a separate farmer-facing dash
 
 The shared device core runtime has been split so that `tk_core.c` owns core setup, task creation, scheduler startup, logging, and stop handling, while telemetry runtime behavior lives in `tk_telemetry.c`.
 
-The current core-created application task is the telemetry task.
+The STM32 target has progressed from standalone blink/serial bring-up to a minimal shared-core runtime integration on the NUCLEO-F446RE. 
 
-Telemetry message timestamps remain device/event timestamps. Publish timeout behavior now uses runtime elapsed time rather than subtracting telemetry message timestamps.
+The STM32 target now initializes basic board clock, LD2, and USART2, provides a minimal `tk_platform_t`, and calls `tk_core_run(&platform)`. 
 
-The STM32 target has a standalone NUCLEO-F446RE bring-up firmware path that builds, flashes, blinks LD2 on PA5, and prints status messages over USART2 through the ST-LINK virtual COM port.
+The shared core starts FreeRTOS on the STM32 Cortex-M4F port and creates the current core-owned runtime tasks:
+ - telemetry task 
+ - status task 
 
-This standalone firmware does not yet integrate the shared device core or FreeRTOS runtime.
+The STM32 telemetry callback is currently a bring-up stub that returns a fixed telemetry sample. 
+
+The STM32 publish callback is currently a bring-up stub that logs publish activity over USART2. 
+
+The core-owned status task toggles the STM32 status LED through a target-provided callback. 
+
+This is a runtime heartbeat and not product telemetry. The STM32 target does not yet read real field inputs, publish over MQTT, use LTE, load device identity, or handle certificate material.
 
 ## Device runtime idle behavior
 
@@ -175,3 +183,7 @@ A top-level `Makefile` provides common local development commands for stack mana
 * latest-state API alignment with the OpenAPI contract
 * raw-message retention behavior
 * STM32 integration with the shared device core
+* STM32 real field input reading and debouncing 
+* STM32 modem/LTE publishing
+* STM32 identity and certificate storage 
+* STM32 logging cleanup

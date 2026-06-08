@@ -1,3 +1,5 @@
+# device/targets/stm32/CMakeLists.txt
+
 cmake_minimum_required(VERSION 3.22)
 
 project(tilekoumanto_stm32 C ASM)
@@ -8,11 +10,46 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 set(TARGET_NAME tilekoumanto_stm32)
 
+set(TK_CORE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../core)
+set(FREERTOS_ROOT ${TK_CORE_ROOT}/third_party/freertos)
+
 set(STM32_MCU_FLAGS
     -mcpu=cortex-m4
     -mthumb
     -mfpu=fpv4-sp-d16
     -mfloat-abi=hard
+)
+
+set(TK_FREERTOS_CONFIG_DIR
+    ${CMAKE_CURRENT_SOURCE_DIR}/config
+)
+
+set(TK_FREERTOS_PORT_SOURCES
+    ${FREERTOS_ROOT}/portable/GCC/ARM_CM4F/port.c
+)
+
+set(TK_FREERTOS_PORT_INCLUDE_DIRS
+    ${FREERTOS_ROOT}/portable/GCC/ARM_CM4F
+)
+
+set(TK_FREERTOS_COMPILE_OPTIONS
+    ${STM32_MCU_FLAGS}
+    -Wall
+    -Wextra
+    -Wpedantic
+    -ffunction-sections
+    -fdata-sections
+)
+
+set(TK_CORE_COMPILE_OPTIONS
+    ${STM32_MCU_FLAGS}
+    -ffunction-sections
+    -fdata-sections
+)
+
+add_subdirectory(
+    ${TK_CORE_ROOT}
+    ${CMAKE_CURRENT_BINARY_DIR}/core
 )
 
 add_executable(${TARGET_NAME}.elf
@@ -33,11 +70,13 @@ target_compile_definitions(${TARGET_NAME}.elf PRIVATE
 )
 
 target_include_directories(${TARGET_NAME}.elf PRIVATE
-
-    third_party/CMSIS_5/CMSIS/Core/Include   
+    third_party/CMSIS_5/CMSIS/Core/Include
     third_party/cmsis-device-f4/Include
     third_party/stm32f4xx-hal-driver/Inc
-    
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/config
+    ${TK_CORE_ROOT}/config
+    ${TK_CORE_ROOT}/include
 )
 
 target_compile_options(${TARGET_NAME}.elf PRIVATE
@@ -47,6 +86,12 @@ target_compile_options(${TARGET_NAME}.elf PRIVATE
     -Wpedantic
     -ffunction-sections
     -fdata-sections
+    -g
+    -Og
+)
+
+target_link_libraries(${TARGET_NAME}.elf PRIVATE
+    tilekoumanto_core
 )
 
 target_link_options(${TARGET_NAME}.elf PRIVATE

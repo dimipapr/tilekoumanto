@@ -1,3 +1,17 @@
+# device/core/CMakeLists.txt
+
+if(NOT DEFINED TK_FREERTOS_CONFIG_DIR)
+    message(FATAL_ERROR "TK_FREERTOS_CONFIG_DIR must be set by the target")
+endif()
+
+if(NOT DEFINED TK_FREERTOS_PORT_SOURCES)
+    message(FATAL_ERROR "TK_FREERTOS_PORT_SOURCES must be set by the target")
+endif()
+
+if(NOT DEFINED TK_FREERTOS_PORT_INCLUDE_DIRS)
+    message(FATAL_ERROR "TK_FREERTOS_PORT_INCLUDE_DIRS must be set by the target")
+endif()
+
 add_library(freertos_kernel STATIC
     third_party/freertos/tasks.c
     third_party/freertos/queue.c
@@ -5,32 +19,35 @@ add_library(freertos_kernel STATIC
     third_party/freertos/timers.c
     third_party/freertos/event_groups.c
     third_party/freertos/stream_buffer.c
-    third_party/freertos/portable/ThirdParty/GCC/Posix/port.c
-    third_party/freertos/portable/ThirdParty/GCC/Posix/utils/wait_for_event.c
-)
-
-set_target_properties(freertos_kernel PROPERTIES
-    POSITION_INDEPENDENT_CODE ON
+    ${TK_FREERTOS_PORT_SOURCES}
 )
 
 target_include_directories(freertos_kernel PUBLIC
+    ${TK_FREERTOS_CONFIG_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/config
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/freertos/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/freertos/portable/ThirdParty/GCC/Posix
+    ${TK_FREERTOS_PORT_INCLUDE_DIRS}
 )
 
 target_compile_features(freertos_kernel PUBLIC c_std_99)
 
-target_compile_definitions(freertos_kernel PRIVATE
-    _POSIX_C_SOURCE=200809L
+if(DEFINED TK_FREERTOS_COMPILE_DEFINITIONS)
+    target_compile_definitions(freertos_kernel PRIVATE
+        ${TK_FREERTOS_COMPILE_DEFINITIONS}
+    )
+endif()
+
+if(DEFINED TK_FREERTOS_COMPILE_OPTIONS)
+    target_compile_options(freertos_kernel PRIVATE
+        ${TK_FREERTOS_COMPILE_OPTIONS}
+    )
+    target_compile_options(freertos_kernel PRIVATE
+    $<$<C_COMPILER_ID:GNU>:-Wno-unused-variable>
 )
+endif()
 
 add_library(tilekoumanto_logic STATIC
     src/tk_telemetry.c
-)
-
-set_target_properties(tilekoumanto_logic PROPERTIES
-    POSITION_INDEPENDENT_CODE ON
 )
 
 target_include_directories(tilekoumanto_logic PUBLIC
@@ -54,13 +71,16 @@ target_compile_options(tilekoumanto_logic PRIVATE
     -Wwrite-strings
 )
 
+if(DEFINED TK_CORE_COMPILE_OPTIONS)
+    target_compile_options(tilekoumanto_logic PRIVATE
+        ${TK_CORE_COMPILE_OPTIONS}
+    )
+endif()
+
 add_library(tilekoumanto_core
     src/tk_core.c
     src/tk_telemetry_task.c
-)
-
-set_target_properties(tilekoumanto_core PROPERTIES
-    POSITION_INDEPENDENT_CODE ON
+    src/tk_status_task.c
 )
 
 target_include_directories(tilekoumanto_core PUBLIC
@@ -84,6 +104,12 @@ target_compile_options(tilekoumanto_core PRIVATE
     -Wwrite-strings
 )
 
+if(DEFINED TK_CORE_COMPILE_OPTIONS)
+    target_compile_options(tilekoumanto_core PRIVATE
+        ${TK_CORE_COMPILE_OPTIONS}
+    )
+endif()
+
 target_link_libraries(
     tilekoumanto_core PRIVATE 
     tilekoumanto_logic
@@ -92,7 +118,7 @@ target_link_libraries(
 
 include(CTest)
 
-if(BUILD_TESTING)
+if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
     add_executable(test_logic
         tests/test_logic.c
     )

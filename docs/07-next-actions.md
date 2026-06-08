@@ -1,18 +1,20 @@
-# Next Actions
+# Next Actions 
 
-## Current focus
+## Current focus 
 
-Clarify and protect the basic device telemetry publishing model.
+Clean up the STM32 shared-core runtime stub and prepare for real input integration. 
 
-## Immediate next actions
+## Immediate next actions 
 
-1. Replace the standalone STM32 bring-up loop with a minimal STM32 target platform stub.
-
-   Success condition:
-
-   - STM32 target initializes board basics
-   - target provides a minimal `tk_platform_t`
-   - target calls `tk_core_run(&platform)`
-   - LED or USART output confirms the shared core runtime is alive on the NUCLEO-F446RE
-
-2. Keep LTE, MQTT, real field inputs, certificate storage, and modem publishing out of scope until the shared-core STM32 runtime stub works.
+   1. Clean up STM32 bring-up logging. 
+      
+      Success condition: 
+      - temporary debug logs used during scheduler bring-up are removed 
+      - stable logs remain readable 
+      - USART output confirms core start, task start, telemetry stub behavior, and publish/skip behavior 
+   2. Keep LTE, MQTT, certificate storage, identity loading, modem publishing, and real field input handling out of scope until the STM32 shared-core stub is clean and documented. 
+   3. After cleanup, define the smallest STM32 real-input step. 
+      Success condition: 
+      - identify which GPIO pins will represent the MVP mains power and pump relay inputs on the NUCLEO-F446RE 
+      - keep input reading local and simple 
+      - do not add debouncing, MQTT, LTE, or production wiring yet unless documented as a separate next step

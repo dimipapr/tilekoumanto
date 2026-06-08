@@ -128,7 +128,8 @@ clean:
 .PHONY: stm32-build
 stm32-build:
 	cd $(STM32_DIR) && cmake -S . -B build/debug \
-		-DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake
+		-DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake \
+		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 	cd $(STM32_DIR) && cmake --build build/debug
 
 .PHONY: stm32-flash

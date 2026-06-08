@@ -70,17 +70,17 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
     tk_telemetry_t telemetry = {0};
 
     if (platform == 0) {
-        return 0;
+        return -1;
     }
 
     if (platform->read_telemetry == 0) {
         tk_log(platform, "read_telemetry callback missing");
-        return 0;
+        return -1;
     }
 
-    if (platform->read_telemetry(&telemetry) == 0) {
+    if (platform->read_telemetry(&telemetry) != 0) {
         tk_log(platform, "read_telemetry failed");
-        return 0;
+        return -1;
     }
 
     tk_log(
@@ -108,19 +108,19 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
             time_since_last_publish_ms
         )) {
         tk_log(platform, "publish_telemetry skipped");
-        return 1;
+        return 0;
     }
     
     telemetry.seq = g_next_telemetry_seq++;
 
     if (platform->publish_telemetry == 0) {
         tk_log(platform, "publish_telemetry callback missing");
-        return 0;
+        return -1;
     }
 
-    if (platform->publish_telemetry(&telemetry) == 0) {
+    if (platform->publish_telemetry(&telemetry) != 0) {
         tk_log(platform, "publish_telemetry failed");
-        return 0;
+        return -1;
     }
 
     g_last_published = telemetry;
@@ -133,7 +133,7 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
     telemetry.seq
 );
 
-    return 1;
+    return 0;
 }
 
 void tk_telemetry_task(void *argument)
@@ -160,7 +160,7 @@ void tk_telemetry_task(void *argument)
             break;
         }
 
-        if (!tk_process_telemetry_once(platform)) {
+        if (tk_process_telemetry_once(platform) != 0) {
             tk_log(platform, "telemetry processing failed");
         }
 

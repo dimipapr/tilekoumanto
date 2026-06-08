@@ -182,3 +182,19 @@ The shared core enables idle-hook support but does not define target idle behavi
 The Python simulator target provides a POSIX idle hook that sleeps briefly to avoid busy-spinning a CPU core.
 
 STM32 and future targets should provide their own explicit idle-hook behavior.
+
+## FreeRTOS configuration ownership Decision:
+ 
+ FreeRTOS remains part of the shared device core runtime model, but each target owns its concrete FreeRTOS configuration and port selection. 
+ The shared core owns the `freertos_kernel` build target and the core runtime tasks. Each target provides: - its target-owned `FreeRTOSConfig.h` - the FreeRTOS port source files - the FreeRTOS port include directories - target-specific compile options required by that port and CPU Each target `FreeRTOSConfig.h` includes the core-owned `FreeRTOSConfig_core.h`.
+ The core-owned FreeRTOS configuration header defines runtime policy required by the shared core, such as static allocation support, idle-hook usage, stack-overflow checking, and required task delay APIs. Target-owned FreeRTOS values include CPU clock, tick rate, interrupt priority settings, stack sizing, and other port-specific configuration. 
+ 
+ ## Position-independent code: 
+ 
+ position-independent code is target/build-specific and must not be forced by the shared core. 
+ The Python simulator may require position-independent code for shared-library or FFI use. 
+ Bare-metal STM32 firmware should not use position-independent code by default. The STM32 firmware build disables PIC after PIC caused invalid runtime access in FreeRTOS scheduler state during bring-up. 
+ 
+ ## Platform callback return convention Decision:
+ 
+ platform callbacks that return `int` use C-style status conventions. For callbacks such as `read_telemetry`, `publish_telemetry`, and `status_led_toggle`: - `0` means success - nonzero means failure For `should_stop`: - `0` means continue running - nonzero means stop requested ## Core-owned status task Decision: the shared core owns a simple status task. The status task is part of the core runtime and uses a target-provided status LED callback when available. The target owns the physical LED implementation. The status LED is a runtime heartbeat and not product telemetry.

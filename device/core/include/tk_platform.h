@@ -14,6 +14,8 @@ typedef struct {
     int (*read_telemetry)(tk_telemetry_t *out);
     int (*publish_telemetry)(const tk_telemetry_t *tk_telemetry);
     int (*should_stop)(void);
+
+    int (*status_led_toggle)(void);
 } tk_platform_t;
 
 #endif

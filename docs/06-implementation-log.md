@@ -333,3 +333,29 @@ Confirmed runtime behavior on the NUCLEO-F446RE:
 This verifies the local STM32 build, flash, GPIO, SysTick delay, and USART2 serial bring-up path.
 
 This does not yet integrate the shared Tilekoumanto device core or FreeRTOS runtime.
+
+## 2026-06-08 STM32 shared-core runtime integration
+
+Integrated the STM32 target with the shared Tilekoumanto device core runtime.
+
+The STM32 target now initializes basic board clock, LED, and USART2 output, provides a minimal `tk_platform_t`, and calls `tk_core_run(&platform)`.
+
+Confirmed on NUCLEO-F446RE that:
+
+- the shared core starts
+- FreeRTOS starts on the STM32 Cortex-M4F port
+- the core-created telemetry task runs
+- the core-created status task runs
+- the STM32 telemetry stub returns a fixed sample
+- the first telemetry sample is selected for publish
+- unchanged telemetry samples are skipped by the shared publish-decision logic
+- USART2 logs confirm runtime behavior
+- the status LED task toggles LD2 as a scheduler/runtime heartbeat
+
+The STM32 target now uses a target-owned `FreeRTOSConfig.h` that includes the core-owned `FreeRTOSConfig_core.h`.
+
+The core FreeRTOS CMake build was adjusted so targets select their FreeRTOS config directory, port sources, port include directories, and target compile options while the shared core still owns the `freertos_kernel` target.
+
+Disabled position-independent code for the STM32 firmware build. PIC remains a target/build concern and should not be forced by the shared core for bare-metal firmware.
+
+The STM32 runtime currently uses a bring-up telemetry stub. It does not yet read real field inputs, publish over MQTT, use LTE, load device identity, or handle certificate material.

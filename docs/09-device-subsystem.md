@@ -16,7 +16,7 @@ The current development target is:
 
 ```text
 NUCLEO-F446RE
-```
+````
 
 The current cellular module direction is:
 
@@ -88,11 +88,16 @@ The shared device core owns the application runtime model.
 
 Current targets provide platform-specific setup and callbacks, then hand control to the core.
 
-The current application task graph contains one task:
+The current core-owned application task graph contains:
 
 ```text
 telemetry task
+status task
 ```
+
+The telemetry task owns periodic telemetry processing and publish-decision execution.
+
+The status task owns a simple runtime heartbeat and calls a target-provided status LED callback when available.
 
 Targets should not duplicate core device decision logic.
 
@@ -126,6 +131,9 @@ device/core/src/tk_telemetry.c
 
 device/core/src/tk_telemetry_task.c
   FreeRTOS telemetry task/runtime adapter.
+
+device/core/src/tk_status_task.c
+  FreeRTOS status LED/runtime heartbeat task.
 ```
 
 The purpose of this split is to keep device decision logic testable without linking the FreeRTOS runtime.
@@ -138,10 +146,12 @@ The shared C core is responsible for:
 * exposing `tk_core_run()` as the target handoff entrypoint
 * creating core-owned tasks
 * running the telemetry task
+* running the status task
 * reading telemetry through the platform interface
 * calling dependency-free telemetry logic to decide whether telemetry should be published
 * remembering the last successfully published telemetry sample
 * calling target-provided publish behavior
+* calling target-provided status LED behavior when available
 
 The core must not depend on:
 
@@ -159,9 +169,10 @@ Targets are responsible for:
 
 * hardware or simulator initialization
 * implementing the platform callback table
-* providing wall-clock Unix time
+* providing wall-clock Unix time or a temporary bring-up timestamp source
 * reading or simulating telemetry inputs
 * publishing telemetry through the target transport
+* implementing optional status LED behavior
 * handling target-specific shutdown behavior when applicable
 
 A target initializes enough platform state for the core to run, then calls:
@@ -185,6 +196,7 @@ typedef struct {
     int (*read_telemetry)(tk_telemetry_t *out);
     int (*publish_telemetry)(const tk_telemetry_t *telemetry);
     int (*should_stop)(void);
+    int (*status_led_toggle)(void);
 } tk_platform_t;
 ```
 
@@ -195,11 +207,13 @@ log
   Target-provided logging sink.
 
 unix_time_ms
-  Target-provided wall-clock timestamp used for telemetry timestamps.
+  Target-provided telemetry timestamp source.
+  On real embedded targets this should eventually be real wall-clock or device event time.
+  During STM32 bring-up this may temporarily use core runtime milliseconds.
 
 read_telemetry
   Target-provided telemetry input reader.
-  The target fills a tk_telemetry_t sample.
+  The target fills a `tk_telemetry_t` sample.
 
 publish_telemetry
   Target-provided publish operation.
@@ -210,6 +224,26 @@ should_stop
   Target-provided stop request.
   Mainly used by simulator targets for clean shutdown.
   Embedded targets can return 0 forever.
+
+status_led_toggle
+  Optional target-provided status LED toggle.
+  Used by the core-owned status task when available.
+```
+
+Platform callbacks that return `int` use C-style status conventions.
+
+For `read_telemetry`, `publish_telemetry`, and `status_led_toggle`:
+
+```text
+0 = success
+nonzero = failure
+```
+
+For `should_stop`:
+
+```text
+0 = continue running
+nonzero = stop requested
 ```
 
 ## Shared telemetry type
@@ -220,6 +254,7 @@ The current shared telemetry sample contains:
 mains_power
 pump_relay
 unix_time_ms
+seq
 ```
 
 Current conceptual shape:
@@ -229,6 +264,7 @@ typedef struct {
     tk_mains_power_state_t mains_power;
     tk_pump_relay_state_t pump_relay;
     uint64_t unix_time_ms;
+    uint32_t seq;
 } tk_telemetry_t;
 ```
 
@@ -275,6 +311,16 @@ This logic belongs in `tilekoumanto_logic`.
 
 FreeRTOS task scheduling, tick conversion, platform callbacks, and logging belong in the telemetry task/runtime adapter.
 
+## Status task
+
+The shared core owns a simple status task.
+
+The status task periodically calls the target-provided `status_led_toggle` callback when available.
+
+The status task is currently a runtime heartbeat. It is not product telemetry and does not represent pump, mains, MQTT, LTE, or backend state.
+
+Targets without a status LED may leave the callback unset.
+
 ## FreeRTOS ownership
 
 The shared core owns the FreeRTOS application runtime.
@@ -285,6 +331,7 @@ Core runtime responsibilities include:
 * scheduler start
 * task loop timing
 * periodic telemetry processing
+* status heartbeat task execution
 
 The target provides the FreeRTOS port, configuration, and build support needed for the target build.
 
@@ -292,9 +339,25 @@ Current direction:
 
 ```text
 FreeRTOS runtime model: core-owned
+FreeRTOS target config: target-owned
+FreeRTOS port selection: target-owned
 hardware/platform setup: target-owned
 dependency-free decision logic: tilekoumanto_logic
 ```
+
+Each target owns its concrete `FreeRTOSConfig.h`.
+
+Each target `FreeRTOSConfig.h` includes the core-owned `FreeRTOSConfig_core.h`.
+
+The core-owned FreeRTOS configuration header defines runtime policy required by the shared core, such as static allocation support, idle-hook usage, stack-overflow checking, and required task delay APIs.
+
+Target-owned FreeRTOS values include CPU clock, tick rate, interrupt priority settings, stack sizing, and port-specific configuration.
+
+Position-independent code is target/build-specific. It must not be forced by the shared core.
+
+The Python simulator may use position-independent code for shared-library or FFI use.
+
+Bare-metal STM32 firmware should not use position-independent code by default.
 
 ## Python simulator target
 
@@ -343,19 +406,34 @@ The current STM32 development target is:
 NUCLEO-F446RE
 ```
 
-The STM32 target currently has an initial CMake/LL-driver scaffold and a first firmware build path.
+The STM32 target now has a minimal shared-core runtime integration on the NUCLEO-F446RE.
 
-Runtime integration with the shared C core is still pending.
+The current STM32 target:
 
-The STM32 target should eventually:
+* initializes basic board clock
+* initializes LD2
+* initializes USART2 logging
+* provides a minimal `tk_platform_t`
+* calls `tk_core_run(&platform)`
+* runs the shared core FreeRTOS runtime
+* runs the core-owned telemetry task
+* runs the core-owned status task
+* returns a fixed telemetry sample from a bring-up telemetry callback
+* logs publish activity through a publish stub
+* toggles LD2 through the status LED callback
 
-* initialize board hardware
-* initialize required peripherals
-* implement `tk_platform_t`
-* read real device inputs
-* publish telemetry through the selected transport
-* call `tk_core_run(&platform)`
-* let the shared core own the FreeRTOS application runtime
+The STM32 target currently uses the ARM Cortex-M4F FreeRTOS port.
+
+The STM32 target has a target-owned `FreeRTOSConfig.h` and includes the shared `FreeRTOSConfig_core.h`.
+
+The STM32 target still does not:
+
+* read real field inputs
+* debounce input signals
+* publish telemetry over MQTT
+* use LTE or a modem
+* load device identity
+* handle certificate material
 
 ## Connectivity direction
 
@@ -462,12 +540,11 @@ Runtime, target, and full-stack integration tests can be added later when the re
 
 Known device-subsystem follow-ups:
 
+* clean up STM32 bring-up logging
 * add deterministic Python simulator scenarios
 * add simulator fault generation
 * decide how fault state should enter the C telemetry model
-* cleanly integrate the shared core into the STM32 target
-* implement STM32 `tk_platform_t`
-* implement real input reading and debouncing
+* implement STM32 real input reading and debouncing
 * implement real modem/network publishing
 * define how device identity is stored on embedded hardware
 * define how firmware logs are handled on STM32

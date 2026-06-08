@@ -3,6 +3,7 @@
 #include "tk_core.h"
 #include "tk_internal.h"
 #include "tk_telemetry.h"
+#include "tk_status.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -15,9 +16,11 @@
 #define TK_LOG_BUFFER_SIZE 128
 
 #define TK_TELEMETRY_TASK_STACK_WORDS 512
+#define TK_STATUS_TASK_STACK_WORDS 128
 #define TK_IDLE_TASK_STACK_WORDS configMINIMAL_STACK_SIZE
 
 static tk_telemetry_task_context_t g_telemetry_task_context;
+static tk_status_task_context_t g_status_task_context;
 
 static const tk_platform_t *g_platform = 0;
 
@@ -26,6 +29,9 @@ static StackType_t g_idle_task_stack[TK_IDLE_TASK_STACK_WORDS];
 
 static StaticTask_t g_telemetry_task_tcb;
 static StackType_t g_telemetry_task_stack[TK_TELEMETRY_TASK_STACK_WORDS];
+
+static StaticTask_t g_status_task_tcb;
+static StackType_t g_status_task_stack[TK_STATUS_TASK_STACK_WORDS];
 
 static int tk_core_setup(const tk_platform_t *platform);
 static int tk_core_create_tasks(void);
@@ -88,8 +94,10 @@ int tk_core_run(const tk_platform_t *platform)
 {
 
     if (tk_core_setup(platform) != 0)return -1;
+    tk_log(platform, "core creating tasks");
 
     if (tk_core_create_tasks() != 0) return -1;
+    tk_log(platform, "core starting scheduler");
 
     vTaskStartScheduler();
 
@@ -118,7 +126,7 @@ static int tk_core_create_tasks(void)
     TaskHandle_t telemetry_task;
 
     g_telemetry_task_context.platform = g_platform;
-
+    
     telemetry_task = xTaskCreateStatic(
         tk_telemetry_task,
         "telemetry",
@@ -129,10 +137,38 @@ static int tk_core_create_tasks(void)
         &g_telemetry_task_tcb
     );
 
+
     if (telemetry_task == 0) {
         tk_log(g_platform, "telemetry task create failed");
         return -1;
     }
 
+    tk_log(g_platform, "telemetry task created");
+
+    TaskHandle_t status_task;
+
+    g_status_task_context.platform = g_platform;
+
+    status_task = xTaskCreateStatic(
+        tk_status_task,
+        "status",
+        TK_STATUS_TASK_STACK_WORDS,
+        &g_status_task_context,
+        tskIDLE_PRIORITY + 1U,
+        g_status_task_stack,
+        &g_status_task_tcb
+    );
+
+    if (status_task == 0) {
+        tk_log(g_platform, "status task create failed");
+        return -1;
+    }
+
+    tk_log(g_platform, "status task created");
+
     return 0;
+}
+
+uint64_t tk_core_runtime_ms(void){
+    return (uint64_t)xTaskGetTickCount() * (uint64_t)portTICK_PERIOD_MS;
 }
