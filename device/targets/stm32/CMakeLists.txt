@@ -18,10 +18,13 @@ set(STM32_MCU_FLAGS
 add_executable(${TARGET_NAME}.elf
     app/main.c
 
-    third_party/st/Src/system_stm32f4xx.c
-    third_party/st/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_gpio.c
-    third_party/st/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_utils.c
-    third_party/st/startup_stm32f446xx.s
+    platform/system_stm32f4xx.c
+    platform/startup_stm32f446xx.s
+
+    third_party/stm32f4xx-hal-driver/Src/stm32f4xx_ll_gpio.c
+    third_party/stm32f4xx-hal-driver/Src/stm32f4xx_ll_utils.c
+    third_party/stm32f4xx-hal-driver/Src/stm32f4xx_ll_usart.c
+    third_party/stm32f4xx-hal-driver/Src/stm32f4xx_ll_rcc.c
 )
 
 target_compile_definitions(${TARGET_NAME}.elf PRIVATE
@@ -30,9 +33,11 @@ target_compile_definitions(${TARGET_NAME}.elf PRIVATE
 )
 
 target_include_directories(${TARGET_NAME}.elf PRIVATE
-    third_party/st/Drivers/CMSIS/Include
-    third_party/st/Drivers/CMSIS/Device/ST/STM32F4xx/Include
-    third_party/st/Drivers/STM32F4xx_HAL_Driver/Inc
+
+    third_party/CMSIS_5/CMSIS/Core/Include   
+    third_party/cmsis-device-f4/Include
+    third_party/stm32f4xx-hal-driver/Inc
+    
 )
 
 target_compile_options(${TARGET_NAME}.elf PRIVATE

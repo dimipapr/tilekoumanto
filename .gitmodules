@@ -1,3 +1,12 @@
 [submodule "device/core/third_party/freertos"]
 	path = device/core/third_party/freertos
 	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
+[submodule "device/targets/stm32/third_party/CMSIS_5"]
+	path = device/targets/stm32/third_party/CMSIS_5
+	url = https://github.com/ARM-software/CMSIS_5.git
+[submodule "device/targets/stm32/third_party/stm32f4xx-hal-driver"]
+	path = device/targets/stm32/third_party/stm32f4xx-hal-driver
+	url = https://github.com/STMicroelectronics/stm32f4xx-hal-driver.git
+[submodule "device/targets/stm32/third_party/cmsis-device-f4"]
+	path = device/targets/stm32/third_party/cmsis-device-f4
+	url = https://github.com/STMicroelectronics/cmsis-device-f4.git

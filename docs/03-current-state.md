@@ -136,6 +136,10 @@ The current core-created application task is the telemetry task.
 
 Telemetry message timestamps remain device/event timestamps. Publish timeout behavior now uses runtime elapsed time rather than subtracting telemetry message timestamps.
 
+The STM32 target has a standalone NUCLEO-F446RE bring-up firmware path that builds, flashes, blinks LD2 on PA5, and prints status messages over USART2 through the ST-LINK virtual COM port.
+
+This standalone firmware does not yet integrate the shared device core or FreeRTOS runtime.
+
 ## Device runtime idle behavior
 
 FreeRTOS idle-hook support is enabled.

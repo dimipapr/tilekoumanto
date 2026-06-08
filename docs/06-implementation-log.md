@@ -311,3 +311,25 @@ The Python simulator publisher now includes the sequence number in the MQTT mess
     "faults": []
   }
 }
+
+```
+
+## 2026-06-08 STM32 standalone blink and serial bring-up
+
+Rebuilt the STM32 target as a clean standalone NUCLEO-F446RE bring-up target.
+
+The STM32 target now uses explicit upstream third-party components for CMSIS core, STM32F4 CMSIS device headers, and the STM32F4 HAL/LL driver package.
+
+Target-owned STM32 startup and system files live under the STM32 target platform area instead of a mixed third-party ST folder.
+
+Verified the standalone firmware build and flash path using the ARM embedded toolchain and OpenOCD.
+
+Confirmed runtime behavior on the NUCLEO-F446RE:
+
+- LD2 uses a distinctive blink pattern on PA5
+- USART2 TX prints status messages over the ST-LINK virtual COM port
+- serial output is visible from a terminal at 115200 baud
+
+This verifies the local STM32 build, flash, GPIO, SysTick delay, and USART2 serial bring-up path.
+
+This does not yet integrate the shared Tilekoumanto device core or FreeRTOS runtime.

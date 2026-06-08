@@ -6,15 +6,13 @@ Clarify and protect the basic device telemetry publishing model.
 
 ## Immediate next actions
 
-1. Decide the next small boundary around publish-selected telemetry.
+1. Replace the standalone STM32 bring-up loop with a minimal STM32 target platform stub.
 
-   Current known behavior:
+   Success condition:
 
-   - telemetry selected for publishing gets `meta.seq`
-   - skipped samples do not increment `seq`
-   - `last_published` currently means last successful publish
-   - retry, pending, in-flight, and publisher-task behavior are not settled yet
+   - STM32 target initializes board basics
+   - target provides a minimal `tk_platform_t`
+   - target calls `tk_core_run(&platform)`
+   - LED or USART output confirms the shared core runtime is alive on the NUCLEO-F446RE
 
-2. Add focused tests around the current sequence behavior before changing the publish architecture.
-
-3. Do not document or implement queue/publisher-task behavior until the model is clearer.
+2. Keep LTE, MQTT, real field inputs, certificate storage, and modem publishing out of scope until the shared-core STM32 runtime stub works.

@@ -6,6 +6,11 @@ PYTHON_SIM_DIR := device/targets/python-sim
 
 COMPOSE := docker compose
 
+STM32_DIR := device/targets/stm32
+STM32_BUILD_DIR := $(STM32_DIR)/build/debug
+STM32_ELF := $(STM32_BUILD_DIR)/tilekoumanto_stm32.elf
+STM32_BIN := $(STM32_BUILD_DIR)/tilekoumanto_stm32.bin
+
 .PHONY: help
 help:
 	@echo "Tilekoumanto project commands"
@@ -37,6 +42,12 @@ help:
 	@echo "All:"
 	@echo "  make test                Run backend, simulator, and C tests"
 	@echo "  make clean               Remove local build/cache artifacts"
+	@echo ""
+	@echo ""
+	@echo "STM32:"
+	@echo "  make stm32-build         Configure and build standalone STM32 firmware"
+	@echo "  make stm32-flash         Flash standalone STM32 firmware with OpenOCD"
+	@echo "  make stm32-clean         Remove STM32 build artifacts"
 
 .PHONY: stack-up
 stack-up:
@@ -110,5 +121,23 @@ test: backend-test sim-test c-test
 .PHONY: clean
 clean:
 	rm -rf $(PYTHON_SIM_DIR)/build
+	rm -rf $(STM32_DIR)/build
 	find . -type d -name "__pycache__" -prune -exec rm -rf {} +
 	find . -type d -name ".pytest_cache" -prune -exec rm -rf {} +
+
+.PHONY: stm32-build
+stm32-build:
+	cd $(STM32_DIR) && cmake -S . -B build/debug \
+		-DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake
+	cd $(STM32_DIR) && cmake --build build/debug
+
+.PHONY: stm32-flash
+stm32-flash: stm32-build
+	openocd \
+		-f interface/stlink.cfg \
+		-f target/stm32f4x.cfg \
+		-c "program $(STM32_ELF) verify reset exit"
+
+.PHONY: stm32-clean
+stm32-clean:
+	rm -rf $(STM32_DIR)/build
