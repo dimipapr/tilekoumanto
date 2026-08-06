@@ -8,7 +8,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include <inttypes.h>
+// #include <inttypes.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -116,7 +116,7 @@ static int tk_core_setup(const tk_platform_t *platform){
     g_platform = platform;
 
     tk_log(platform, "core starting");
-    tk_log(platform, "core platform time ms: %" PRIu64, platform->unix_time_ms());
+    // tk_log(platform, "core platform time ms: %" PRIu64, platform->unix_time_ms());
 
     return 0;
 }

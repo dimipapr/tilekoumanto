@@ -18,8 +18,8 @@ static tk_telemetry_t g_last_published;
 static TickType_t g_last_publish_tick = 0;
 static uint32_t g_next_telemetry_seq = 1;
 
-static const char *tk_mains_power_to_string(tk_mains_power_state_t state);
-static const char *tk_pump_relay_to_string(tk_pump_relay_state_t state);
+// static const char *tk_mains_power_to_string(tk_mains_power_state_t state);
+// static const char *tk_pump_relay_to_string(tk_pump_relay_state_t state);
 static int tk_process_telemetry_once(const tk_platform_t *platform);
 static uint64_t tk_elapsed_ticks_to_ms(TickType_t start_tick, TickType_t end_tick);
 
@@ -35,33 +35,33 @@ static uint64_t tk_elapsed_ticks_to_ms(
     return (uint64_t)elapsed_ticks * (uint64_t)portTICK_PERIOD_MS;
 }
 
-static const char *tk_mains_power_to_string(tk_mains_power_state_t state)
-{
-    switch (state) {
-    case TK_MAINS_POWER_PRESENT:
-        return "present";
-    case TK_MAINS_POWER_NOT_PRESENT:
-        return "not_present";
-    case TK_MAINS_POWER_FAULT:
-        return "fault";
-    default:
-        return "unknown";
-    }
-}
+// static const char *tk_mains_power_to_string(tk_mains_power_state_t state)
+// {
+//     switch (state) {
+//     case TK_MAINS_POWER_PRESENT:
+//         return "present";
+//     case TK_MAINS_POWER_NOT_PRESENT:
+//         return "not_present";
+//     case TK_MAINS_POWER_FAULT:
+//         return "fault";
+//     default:
+//         return "unknown";
+//     }
+// }
 
-static const char *tk_pump_relay_to_string(tk_pump_relay_state_t state)
-{
-    switch (state) {
-    case TK_PUMP_RELAY_ACTIVE:
-        return "active";
-    case TK_PUMP_RELAY_INACTIVE:
-        return "inactive";
-    case TK_PUMP_RELAY_FAULT:
-        return "fault";
-    default:
-        return "unknown";
-    }
-}
+// static const char *tk_pump_relay_to_string(tk_pump_relay_state_t state)
+// {
+//     switch (state) {
+//     case TK_PUMP_RELAY_ACTIVE:
+//         return "active";
+//     case TK_PUMP_RELAY_INACTIVE:
+//         return "inactive";
+//     case TK_PUMP_RELAY_FAULT:
+//         return "fault";
+//     default:
+//         return "unknown";
+//     }
+// }
 
 static int tk_process_telemetry_once(const tk_platform_t *platform)
 {
@@ -83,13 +83,13 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
         return -1;
     }
 
-    tk_log(
-        platform,
-        "mains:%s relay:%s time:%" PRIu64,
-        tk_mains_power_to_string(telemetry.mains_power),
-        tk_pump_relay_to_string(telemetry.pump_relay),
-        telemetry.unix_time_ms
-    );
+    // tk_log(
+    //     platform,
+    //     "mains:%s relay:%s time:%" PRIu64,
+    //     tk_mains_power_to_string(telemetry.mains_power),
+    //     tk_pump_relay_to_string(telemetry.pump_relay),
+    //     telemetry.unix_time_ms
+    // );
 
     current_tick = xTaskGetTickCount();
 
@@ -107,7 +107,7 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
             &telemetry,
             time_since_last_publish_ms
         )) {
-        tk_log(platform, "publish_telemetry skipped");
+        // tk_log(platform, "publish_telemetry skipped");
         return 0;
     }
     
@@ -160,9 +160,7 @@ void tk_telemetry_task(void *argument)
             break;
         }
 
-        if (tk_process_telemetry_once(platform) != 0) {
-            tk_log(platform, "telemetry processing failed");
-        }
+        (void)tk_process_telemetry_once(platform);
 
         vTaskDelayUntil(
             &last_wake_tick,
