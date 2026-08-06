@@ -29,7 +29,7 @@ EXCLUDED_DIRS = {
     "__pycache__",
     "node_modules",
     "certs",
-    "operator/restart_prompts",
+    "operator/restart-prompts",
 }
 
 EXCLUDED_FILES = {
