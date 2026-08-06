@@ -359,3 +359,26 @@ The core FreeRTOS CMake build was adjusted so targets select their FreeRTOS conf
 Disabled position-independent code for the STM32 firmware build. PIC remains a target/build concern and should not be forced by the shared core for bare-metal firmware.
 
 The STM32 runtime currently uses a bring-up telemetry stub. It does not yet read real field inputs, publish over MQTT, use LTE, load device identity, or handle certificate material.
+
+## 2026-08-06 STM32 runtime validation and telemetry log cleanup
+
+Rebuilt and flashed the current STM32 shared-core firmware to the NUCLEO-F446RE.
+
+Validated the current bring-up behavior:
+
+* LD2 toggles through the core-owned status task
+* USART2 output is readable through the ST-LINK virtual COM port at 115200 baud, 8 data bits, no parity, and 1 stop bit
+* the telemetry task runs once per second
+* the fixed STM32 telemetry stub reports mains power present and pump relay inactive
+* the first telemetry sample is selected for publishing
+* unchanged telemetry samples are skipped
+* the publish timeout triggers another publish after approximately 30 seconds
+* telemetry sequence numbers increment only for selected publish attempts
+
+Observed that startup log messages from the telemetry and status tasks can overlap because multiple tasks write through the current unsynchronized blocking USART logging callback.
+
+Removed the per-cycle telemetry-state and skipped-publish logs from the telemetry task. Successful publish and error logs remain.
+
+The normal serial output is now substantially quieter. A dedicated logging task or other logging synchronization remains deferred while the physical hardware stack is validated.
+
+Changed the immediate project focus to standalone hardware validation
