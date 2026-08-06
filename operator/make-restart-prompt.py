@@ -30,14 +30,27 @@ EXCLUDED_DIRS = {
     "node_modules",
     "certs",
     "operator/restart-prompts",
+    "build",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    "dist",
+}
+
+COLLAPSED_DIRS = {
+    "third_party",
+    "archive",
 }
 
 EXCLUDED_FILES = {
     ".DS_Store",
+    ".env",
 }
 
 EXCLUDED_SUFFIXES = {
     ".pyc",
+    ".bak",
+    ".swp",
 }
 
 INSTRUCTIONS = """\
@@ -118,7 +131,11 @@ def visible_children(path: Path) -> list[Path]:
     return sorted(children, key=lambda p: (not p.is_dir(), p.name.lower()))
 
 
-def build_tree(path: Path, prefix: str = "") -> list[str]:
+def build_tree(
+    path: Path,
+    prefix: str = "",
+    collapsed_depth: int | None = None,
+) -> list[str]:
     lines: list[str] = []
     children = visible_children(path)
 
@@ -127,8 +144,33 @@ def build_tree(path: Path, prefix: str = "") -> list[str]:
         connector = "└── " if is_last else "├── "
         lines.append(f"{prefix}{connector}{child.name}")
 
-        if child.is_dir():
-            extension = "    " if is_last else "│   "
+        if not child.is_dir():
+            continue
+
+        extension = "    " if is_last else "│   "
+
+        if collapsed_depth is not None:
+            if collapsed_depth <= 0:
+                continue
+
+            lines.extend(
+                build_tree(
+                    child,
+                    prefix + extension,
+                    collapsed_depth=collapsed_depth - 1,
+                )
+            )
+            continue
+
+        if child.name in COLLAPSED_DIRS:
+            lines.extend(
+                build_tree(
+                    child,
+                    prefix + extension,
+                    collapsed_depth=0,
+                )
+            )
+        else:
             lines.extend(build_tree(child, prefix + extension))
 
     return lines
