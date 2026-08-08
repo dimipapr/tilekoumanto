@@ -1,0 +1,14 @@
+Command: ninja flash
+[1;31m
+A fatal error occurred: Could not open /ttyACM1, the port is busy or doesn't exist.
+([Errno 2] could not open port /ttyACM1: [Errno 2] No such file or directory: '/ttyACM1')
+
+Hint: Check if the port is correct and ESP connected
+[0m
+[31mCMake Error at /home/jim/.espressif/v6.0.2/esp-idf/components/esptool_py/run_serial_tool.cmake:67 (message):
+  
+  /home/jim/.espressif/tools/python/v6.0.2/venv/bin/python;-m;esptool;--chip;esp32s3
+  failed.
+
+
+[0m

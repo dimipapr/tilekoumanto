@@ -1,0 +1,5 @@
+"-specs=/home/jim/Documents/tilekoumanto/device/targets/esp32/build/bootloader/specs/picolibc.specs"
+-mlongcalls
+-fno-builtin-memcpy
+-fno-builtin-memset
+-fno-builtin-bzero

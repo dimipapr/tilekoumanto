@@ -8,3 +8,4 @@ operator/restart-prompts/*
 device/targets/stm32/build/
 device/targets/python-sim/build/
 device/core/build/
+eim_config.toml
