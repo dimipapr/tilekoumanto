@@ -13,6 +13,11 @@
       "intelliSenseMode": "linux-gcc-arm",
       "compilerPath": "arm-none-eabi-gcc",
       "cStandard": "c99"
+    },
+    {
+      "name": "ESP32",
+      "compileCommands": "${workspaceFolder}/device/targets/firmware/esp32/build/compile_commands.json",
+      "compilerPath": "/home/jim/.espressif/tools/xtensa-esp-elf/esp-15.2.0_20251204/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc"
     }
   ],
   "version": 4
