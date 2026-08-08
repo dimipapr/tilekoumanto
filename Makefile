@@ -2,7 +2,6 @@ SHELL := /bin/sh
 
 BACKEND_DIR := backend
 DJANGO_DIR := backend/django
-PYTHON_SIM_DIR := device/targets/simulator
 
 COMPOSE := docker compose
 
@@ -10,6 +9,13 @@ STM32_DIR := device/targets/firmware/stm32
 STM32_BUILD_DIR := $(STM32_DIR)/build/debug
 STM32_ELF := $(STM32_BUILD_DIR)/tilekoumanto_stm32.elf
 STM32_BIN := $(STM32_BUILD_DIR)/tilekoumanto_stm32.bin
+
+SIM_DIR := device/targets/simulator
+SIM_VENV := $(CURDIR)/$(SIM_DIR)/.venv
+SIM_PYTHON := $(SIM_VENV)/bin/python
+SIM_PIP := $(SIM_PYTHON) -m pip
+SIM_REQUIREMENTS := $(SIM_DIR)/requirements.txt
+SIM_VENV_STAMP := $(SIM_VENV)/.requirements-installed
 
 .PHONY: help
 help:
@@ -98,29 +104,39 @@ backend-migrate:
 backend-shell:
 	cd $(BACKEND_DIR) && $(COMPOSE) exec django-web sh
 
+$(SIM_VENV)/bin/python:
+	python3 -m venv $(SIM_VENV)
+
+$(SIM_VENV_STAMP): $(SIM_REQUIREMENTS) | $(SIM_VENV)/bin/python
+	$(SIM_PIP) install -r $(SIM_REQUIREMENTS)
+	@touch $(SIM_VENV_STAMP)
+
+.PHONY: sim-venv
+sim-venv: $(SIM_VENV_STAMP)
+
 .PHONY: sim-build
 sim-build:
-	cd $(PYTHON_SIM_DIR) && cmake -S . -B build/debug -DBUILD_TESTING=ON
-	cd $(PYTHON_SIM_DIR) && cmake --build build/debug
+	cd $(SIM_DIR) && cmake -S . -B build/debug -DBUILD_TESTING=ON
+	cd $(SIM_DIR) && cmake --build build/debug
 
 .PHONY: sim-run
-sim-run:
-	cd $(PYTHON_SIM_DIR) && python -m app.main
+sim-run: sim-venv
+	cd $(SIM_DIR) && $(SIM_PYTHON) -m app.main
 
 .PHONY: sim-test
-sim-test:
-	cd $(PYTHON_SIM_DIR) && python -m pytest
+sim-test: sim-venv
+	cd $(SIM_DIR) && $(SIM_PYTHON) -m pytest
 
 .PHONY: c-test
 c-test: sim-build
-	cd $(PYTHON_SIM_DIR) && ctest --test-dir build/debug/core --output-on-failure
+	cd $(SIM_DIR) && ctest --test-dir build/debug/core --output-on-failure
 
 .PHONY: test
 test: backend-test sim-test c-test
 
 .PHONY: clean
 clean:
-	rm -rf $(PYTHON_SIM_DIR)/build
+	rm -rf $(SIM_DIR)/build
 	rm -rf $(STM32_DIR)/build
 	find . -type d -name "__pycache__" -prune -exec rm -rf {} +
 	find . -type d -name ".pytest_cache" -prune -exec rm -rf {} +
