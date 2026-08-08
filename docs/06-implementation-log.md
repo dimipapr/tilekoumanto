@@ -382,3 +382,19 @@ Removed the per-cycle telemetry-state and skipped-publish logs from the telemetr
 The normal serial output is now substantially quieter. A dedicated logging task or other logging synchronization remains deferred while the physical hardware stack is validated.
 
 Changed the immediate project focus to standalone hardware validation
+
+## 2026-08-08 Development tooling cleanup
+
+Cleaned up the repository and local development workflow after the device target restructure.
+
+- finalized the device target layout under `device/targets/simulator` and `device/targets/firmware/{stm32,esp32}`
+- fixed simulator and STM32 CMake paths after the restructure
+- validated simulator, backend, C tests, STM32 build/flash, and ESP32 build/flash workflows
+- added root Make targets for ESP32 build, flash, monitor, clean, and flash+monitor while isolating the ESP-IDF environment from the parent shell
+- fixed simulator `ctypes` platform ABI alignment after adding the optional status LED callback
+- fixed simulator telemetry callback return conventions
+- added per-requirements-file virtualenv handling, including a simulator environment and aggregate root development environment
+- updated root development requirements so Python tooling and VS Code IntelliSense can use the root `.venv`
+- configured VS Code C/C++ IntelliSense with explicit Simulator, STM32, and ESP32 profiles backed by each target's `compile_commands.json`
+- enabled simulator CMake compile-command generation for VS Code
+- kept target selection manual in VS Code so shared core headers can be inspected under the intended simulator or firmware compilation context
