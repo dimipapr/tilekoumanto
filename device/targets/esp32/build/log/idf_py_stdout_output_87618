@@ -1,8 +1,0 @@
-Command: ninja all
-[1/4] cd /home/jim/Documents/tilekoumanto/device/targets/esp32/build && /home/jim/.espressif/tools/python/v6.0.2/venv/bin/python /home/jim/.espressif/v6.0.2/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /home/jim/Documents/tilekoumanto/device/targets/esp32/build/partition_table/partition-table.bin /home/jim/Documents/tilekoumanto/device/targets/esp32/build/tilekoumanto_esp32.bin
-tilekoumanto_esp32.bin binary size 0x28090 bytes. Smallest app partition is 0x100000 bytes. 0xd7f70 bytes (84%) free.
-[2/4] Performing build step for 'bootloader'
-[1/1] cd /home/jim/Documents/tilekoumanto/device/targets/esp32/build/bootloader && /home/jim/.espressif/tools/python/v6.0.2/venv/bin/python /home/jim/.espressif/v6.0.2/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /home/jim/Documents/tilekoumanto/device/targets/esp32/build/bootloader/bootloader.bin
-Bootloader binary size 0x5240 bytes. 0x2dc0 bytes (36%) free.
-[3/4] No install step for 'bootloader'
-[4/4] Completed 'bootloader'

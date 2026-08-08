@@ -1,5 +1,0 @@
-Command: /home/jim/.espressif/tools/python/v6.0.2/venv/bin/python /home/jim/.espressif/v6.0.2/esp-idf/tools/idf_monitor.py -p /dev/ttyACM1 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 /home/jim/Documents/tilekoumanto/device/targets/esp32/build/tilekoumanto_esp32.elf /home/jim/Documents/tilekoumanto/device/targets/esp32/build/bootloader/bootloader.elf -m '/home/jim/.espressif/tools/python/v6.0.2/venv/bin/python' '/home/jim/.espressif/v6.0.2/esp-idf/tools/idf.py' '-p' '/dev/ttyACM1'
-[0;33m--- esp-idf-monitor 1.9.0 on /dev/ttyACM1 115200[0m
-[0;33m--- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H[0m
-[0m--- 0x40041a76: [0;33mets_delay_us[0m[0m in [0;32mROM[0m
-[0m

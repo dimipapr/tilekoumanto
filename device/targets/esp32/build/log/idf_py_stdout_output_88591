@@ -1,6 +1,0 @@
-Command: /home/jim/.espressif/tools/python/v6.0.2/venv/bin/python /home/jim/.espressif/v6.0.2/esp-idf/tools/idf_monitor.py -p /dev/ttyACM1 -b 115200 --toolchain-prefix xtensa-esp32s3-elf- --target esp32s3 --revision 0 /home/jim/Documents/tilekoumanto/device/targets/esp32/build/tilekoumanto_esp32.elf /home/jim/Documents/tilekoumanto/device/targets/esp32/build/bootloader/bootloader.elf -m '/home/jim/.espressif/tools/python/v6.0.2/venv/bin/python' '/home/jim/.espressif/v6.0.2/esp-idf/tools/idf.py' '-p' '/dev/ttyACM1'
-ESP-ROM:esp32s3-20210327
-Build:Mar 27 2021
-rst:0x15 (USB_UART_CHIP_RESET),boot:0x0 (DOWNLOAD(USB/UART0))
-Saved PC:0x40041a76
-waiting for download
