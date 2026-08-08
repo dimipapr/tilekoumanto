@@ -10,7 +10,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 set(TARGET_NAME tilekoumanto_stm32)
 
-set(TK_CORE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../core)
+set(TK_CORE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../../core)
 set(FREERTOS_ROOT ${TK_CORE_ROOT}/third_party/freertos)
 
 set(STM32_MCU_FLAGS
