@@ -17,10 +17,17 @@
 #define LED_GPIO_PORT GPIOA
 #define LED_PIN LL_GPIO_PIN_5
 
+#define MAINS_STATUS_GPIO_PORT GPIOC
+#define MAINS_STATUS_PIN LL_GPIO_PIN_0
+
+#define PUMP_STATUS_GPIO_PORT GPIOC
+#define PUMP_STATUS_PIN LL_GPIO_PIN_1
+
 #define USART_TX_GPIO_PORT GPIOA
 #define USART_TX_PIN LL_GPIO_PIN_2
 #define USART_BAUDRATE 115200U
 
+static void inputs_init(void);
 static void clock_init(void);
 static void led_init(void);
 static void usart2_init(void);
@@ -50,6 +57,7 @@ int main(void)
 
     clock_init();
     led_init();
+    inputs_init();
     usart2_init();
 
     usart2_write_string("tilekoumanto stm32 alive\r\n");
@@ -64,6 +72,19 @@ int main(void)
 static int stm32_status_led_toggle(void){
     LL_GPIO_TogglePin(LED_GPIO_PORT, LED_PIN);
     return 0;
+}
+
+static void inputs_init(void)
+{
+    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOC);
+
+    LL_GPIO_InitTypeDef gpio = {0};
+
+    gpio.Pin = MAINS_STATUS_PIN | PUMP_STATUS_PIN;
+    gpio.Mode = LL_GPIO_MODE_INPUT;
+    gpio.Pull = LL_GPIO_PULL_UP;
+
+    LL_GPIO_Init(GPIOC, &gpio);
 }
 
 static void clock_init(void)
@@ -164,8 +185,15 @@ static uint64_t stm32_unix_time_ms(void){
 static int stm32_read_telemetry(tk_telemetry_t *out){
     if (out == 0)return -1;
 
-    out->mains_power = TK_MAINS_POWER_PRESENT;
-    out->pump_relay = TK_PUMP_RELAY_INACTIVE;
+    out->mains_power =
+            LL_GPIO_IsInputPinSet(MAINS_STATUS_GPIO_PORT, MAINS_STATUS_PIN)
+            ? TK_MAINS_POWER_NOT_PRESENT
+            : TK_MAINS_POWER_PRESENT;
+
+    out->pump_relay =
+            LL_GPIO_IsInputPinSet(PUMP_STATUS_GPIO_PORT, PUMP_STATUS_PIN)
+            ? TK_PUMP_RELAY_INACTIVE
+            : TK_PUMP_RELAY_ACTIVE;
     out->unix_time_ms = stm32_unix_time_ms();
     out->seq = 0;
 
