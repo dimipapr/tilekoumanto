@@ -1,8 +1,10 @@
 idf_component_register(
     SRCS 
-        "app_main.c"
-        "tk_comms.c"
-    INCLUDE_DIRS "."
+        "../app/main.c"
+        "../platform/tk_comms.c"
+    INCLUDE_DIRS
+        "../platform"
+        "../config"
     REQUIRES
         esp_event
         esp_netif
