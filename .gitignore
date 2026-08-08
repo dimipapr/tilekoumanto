@@ -5,7 +5,7 @@ __pycache__/
 .env
 operator/restart-prompts/*
 !operator/restart-prompts/.gitkeep
-device/targets/stm32/build/
-device/targets/python-sim/build/
+device/targets/firmware/stm32/build/
+device/targets/simulator/build/
 device/core/build/
 eim_config.toml

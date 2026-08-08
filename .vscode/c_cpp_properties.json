@@ -2,14 +2,14 @@
   "configurations": [
     {
       "name": "Simulator",
-      "compileCommands": "${workspaceFolder}/device/targets/python-sim/build/debug/compile_commands.json",
+      "compileCommands": "${workspaceFolder}/device/targets/simulator/build/debug/compile_commands.json",
       "intelliSenseMode": "linux-gcc-x64",
       "compilerPath": "/usr/bin/gcc",
       "cStandard": "c99"
     },
     {
       "name": "STM32",
-      "compileCommands": "${workspaceFolder}/device/targets/stm32/build/debug/compile_commands.json",
+      "compileCommands": "${workspaceFolder}/device/targets/firmware/stm32/build/debug/compile_commands.json",
       "intelliSenseMode": "linux-gcc-arm",
       "compilerPath": "arm-none-eabi-gcc",
       "cStandard": "c99"

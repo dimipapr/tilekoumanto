@@ -397,7 +397,7 @@ Possible scenario types:
 The STM32 target scaffold exists under:
 
 ```text
-device/targets/stm32
+device/targets/firmware/stm32
 ```
 
 The current STM32 development target is:
@@ -502,7 +502,7 @@ backend/django/devices/contracts/mqtt.py
 The Python simulator publisher should stay aligned with that contract:
 
 ```text
-device/targets/python-sim/app/publisher.py
+device/targets/simulator/app/publisher.py
 ```
 
 ## Device-side testing

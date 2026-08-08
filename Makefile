@@ -2,11 +2,11 @@ SHELL := /bin/sh
 
 BACKEND_DIR := backend
 DJANGO_DIR := backend/django
-PYTHON_SIM_DIR := device/targets/python-sim
+PYTHON_SIM_DIR := device/targets/simulator
 
 COMPOSE := docker compose
 
-STM32_DIR := device/targets/stm32
+STM32_DIR := device/targets/firmware/stm32
 STM32_BUILD_DIR := $(STM32_DIR)/build/debug
 STM32_ELF := $(STM32_BUILD_DIR)/tilekoumanto_stm32.elf
 STM32_BIN := $(STM32_BUILD_DIR)/tilekoumanto_stm32.bin

@@ -1,4 +1,4 @@
-# device/targets/stm32/CMakeLists.txt
+# device/targets/firmware/stm32/CMakeLists.txt
 
 cmake_minimum_required(VERSION 3.22)
 

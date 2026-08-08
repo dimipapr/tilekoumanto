@@ -73,8 +73,8 @@ Decision: device targets are pluggable.
 Current targets:
 
 ```text
-device/targets/python-sim
-device/targets/stm32
+device/targets/simulator
+device/targets/firmware/stm32
 ```
 
 The Python simulator is a real target. It loads the same C core through FFI and should not duplicate core device logic.

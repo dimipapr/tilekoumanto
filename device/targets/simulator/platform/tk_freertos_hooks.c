@@ -1,4 +1,4 @@
-// device/targets/python-sim/platform/tk_freertos_hooks.c
+// device/targets/simulator/platform/tk_freertos_hooks.c
 
 #include <time.h>
 

@@ -1,4 +1,4 @@
-// device/targets/stm32/platform/startup_stm32f446xx.s
+// device/targets/firmware/stm32/platform/startup_stm32f446xx.s
 
     
   .syntax unified

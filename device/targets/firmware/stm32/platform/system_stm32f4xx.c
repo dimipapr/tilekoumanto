@@ -1,4 +1,4 @@
-// device/targets/stm32/platform/system_stm32f4xx.c
+// device/targets/firmware/stm32/platform/system_stm32f4xx.c
 
 /** @addtogroup CMSIS
   * @{

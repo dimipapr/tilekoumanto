@@ -1,4 +1,4 @@
-// device/targets/stm32/app/main.c
+// device/targets/firmware/stm32/app/main.c
 
 #include <stdint.h>
 

@@ -1,4 +1,4 @@
-// device/targets/stm32/config/FreeRTOSConfig.h
+// device/targets/firmware/stm32/config/FreeRTOSConfig.h
 
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H

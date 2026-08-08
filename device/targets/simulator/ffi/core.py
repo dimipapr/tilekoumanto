@@ -1,4 +1,4 @@
-# device/targets/python-sim/ffi/core.py
+# device/targets/simulator/ffi/core.py
 
 import ctypes
 from pathlib import Path
