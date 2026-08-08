@@ -17,6 +17,14 @@ SIM_PIP := $(SIM_PYTHON) -m pip
 SIM_REQUIREMENTS := $(SIM_DIR)/requirements.txt
 SIM_VENV_STAMP := $(SIM_VENV)/.requirements-installed
 
+DJANGO_REQUIREMENTS := $(DJANGO_DIR)/requirements.txt
+
+DEV_VENV := $(CURDIR)/.venv
+DEV_PYTHON := $(DEV_VENV)/bin/python
+DEV_PIP := $(DEV_PYTHON) -m pip
+DEV_REQUIREMENTS := requirements.txt
+DEV_VENV_STAMP := $(DEV_VENV)/.requirements-installed
+
 .PHONY: help
 help:
 	@echo "Tilekoumanto project commands"
@@ -54,6 +62,9 @@ help:
 	@echo "  make stm32-build         Configure and build standalone STM32 firmware"
 	@echo "  make stm32-flash         Flash standalone STM32 firmware with OpenOCD"
 	@echo "  make stm32-clean         Remove STM32 build artifacts"
+	@echo "Development:"
+	@echo "  make dev-venv            Create/update root development virtualenv"
+	@echo ""
 
 .PHONY: stack-up
 stack-up:
@@ -158,3 +169,13 @@ stm32-flash: stm32-build
 .PHONY: stm32-clean
 stm32-clean:
 	rm -rf $(STM32_DIR)/build
+
+$(DEV_VENV)/bin/python:
+	python3 -m venv $(DEV_VENV)
+
+$(DEV_VENV_STAMP): $(DEV_REQUIREMENTS) $(DJANGO_REQUIREMENTS) $(SIM_REQUIREMENTS) | $(DEV_VENV)/bin/python
+	$(DEV_PIP) install -r $(DEV_REQUIREMENTS)
+	@touch $(DEV_VENV_STAMP)
+
+.PHONY: dev-venv
+dev-venv: $(DEV_VENV_STAMP)
