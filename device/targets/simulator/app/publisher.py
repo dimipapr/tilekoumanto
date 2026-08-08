@@ -143,9 +143,9 @@ class TelemetryPublisher:
         result.wait_for_publish()
 
         if result.rc != mqtt.MQTT_ERR_SUCCESS:
-            return 0
+            return 1
 
-        return 1
+        return 0
 
     def close(self) -> None:
         self._client.loop_stop()

@@ -42,7 +42,7 @@ class PythonSim:
         out.contents.pump_relay = self.pump_relay
         out.contents.unix_time_ms = self.unix_time_ms()
 
-        return 1
+        return 0
 
     def publish_telemetry(self, telemetry: Telemetry) -> int:
         return self.publisher.publish(telemetry)
