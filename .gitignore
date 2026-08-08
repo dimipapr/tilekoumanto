@@ -9,3 +9,4 @@ device/targets/firmware/stm32/build/
 device/targets/simulator/build/
 device/core/build/
 eim_config.toml
+typescript

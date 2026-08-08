@@ -10,6 +10,9 @@ STM32_BUILD_DIR := $(STM32_DIR)/build/debug
 STM32_ELF := $(STM32_BUILD_DIR)/tilekoumanto_stm32.elf
 STM32_BIN := $(STM32_BUILD_DIR)/tilekoumanto_stm32.bin
 
+ESP32_DIR := device/targets/firmware/esp32
+ESP_IDF_ACTIVATE := $(HOME)/.espressif/tools/activate_idf_v6.0.2.sh
+
 SIM_DIR := device/targets/simulator
 SIM_VENV := $(CURDIR)/$(SIM_DIR)/.venv
 SIM_PYTHON := $(SIM_VENV)/bin/python
@@ -57,11 +60,18 @@ help:
 	@echo "  make test                Run backend, simulator, and C tests"
 	@echo "  make clean               Remove local build/cache artifacts"
 	@echo ""
-	@echo ""
 	@echo "STM32:"
 	@echo "  make stm32-build         Configure and build standalone STM32 firmware"
 	@echo "  make stm32-flash         Flash standalone STM32 firmware with OpenOCD"
 	@echo "  make stm32-clean         Remove STM32 build artifacts"
+	@echo ""
+	@echo "ESP32:"
+	@echo "  make esp32-build         Build ESP32 communications firmware"
+	@echo "  make esp32-flash         Build and flash ESP32 firmware"
+	@echo "  make esp32-monitor       Open ESP32 serial monitor"
+	@echo "  make esp32-flash-monitor Build, flash, and monitor ESP32 firmware"
+	@echo "  make esp32-clean         Remove ESP32 build artifacts"
+	@echo ""
 	@echo "Development:"
 	@echo "  make dev-venv            Create/update root development virtualenv"
 	@echo ""
@@ -149,6 +159,7 @@ test: backend-test sim-test c-test
 clean:
 	rm -rf $(SIM_DIR)/build
 	rm -rf $(STM32_DIR)/build
+	rm -rf $(ESP32_DIR)/build
 	find . -type d -name "__pycache__" -prune -exec rm -rf {} +
 	find . -type d -name ".pytest_cache" -prune -exec rm -rf {} +
 
@@ -169,6 +180,26 @@ stm32-flash: stm32-build
 .PHONY: stm32-clean
 stm32-clean:
 	rm -rf $(STM32_DIR)/build
+
+.PHONY: esp32-build
+esp32-build:
+	bash -lc 'source "$(ESP_IDF_ACTIVATE)" && cd "$(CURDIR)/$(ESP32_DIR)" && idf.py build'
+
+.PHONY: esp32-flash
+esp32-flash: esp32-build
+	bash -lc 'source "$(ESP_IDF_ACTIVATE)" && cd "$(CURDIR)/$(ESP32_DIR)" && idf.py flash'
+
+.PHONY: esp32-monitor
+esp32-monitor:
+	bash -lc 'source "$(ESP_IDF_ACTIVATE)" && cd "$(CURDIR)/$(ESP32_DIR)" && idf.py monitor'
+
+.PHONY: esp32-flash-monitor
+esp32-flash-monitor: esp32-build
+	bash -lc 'source "$(ESP_IDF_ACTIVATE)" && cd "$(CURDIR)/$(ESP32_DIR)" && idf.py flash monitor'
+
+.PHONY: esp32-clean
+esp32-clean:
+	rm -rf $(ESP32_DIR)/build
 
 $(DEV_VENV)/bin/python:
 	python3 -m venv $(DEV_VENV)

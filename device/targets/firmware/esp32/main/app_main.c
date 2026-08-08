@@ -39,7 +39,7 @@ void app_main(void)
     while (1) {
         ESP_LOGI(TAG, "LED ON");
 
-        led_strip_set_pixel(led_strip, 0, 0, 0, 10);
+        led_strip_set_pixel(led_strip, 0, 0, 1, 0);
         led_strip_refresh(led_strip);
 
         vTaskDelay(pdMS_TO_TICKS(500));
