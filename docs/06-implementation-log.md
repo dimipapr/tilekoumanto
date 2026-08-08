@@ -398,3 +398,14 @@ Cleaned up the repository and local development workflow after the device target
 - configured VS Code C/C++ IntelliSense with explicit Simulator, STM32, and ESP32 profiles backed by each target's `compile_commands.json`
 - enabled simulator CMake compile-command generation for VS Code
 - kept target selection manual in VS Code so shared core headers can be inspected under the intended simulator or firmware compilation context
+
+## 2026-08-08 ESP32 communications bring-up
+
+Brought up the ESP32 communications path through authenticated MQTT/TLS.
+
+- restructured the ESP32 target around `app/`, `platform/`, and `config/`
+- implemented the initial `tk_comms` Wi-Fi abstraction and validated Wi-Fi/DHCP on hardware
+- added ESP-MQTT and connected to the development broker over MQTTs
+- configured mutual TLS with broker CA verification and client certificate authentication
+- validated the full ESP32 → Wi-Fi → MQTT/mTLS → Mosquitto connection on hardware
+- temporarily embedded certificates in the firmware for bring-up; separate certificate provisioning and private-key protection are deferred

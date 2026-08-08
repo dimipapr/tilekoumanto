@@ -1,3 +1,7 @@
+#include <arpa/inet.h>
+#include <errno.h>
+#include <sys/socket.h>
+
 #include "tk_comms.h"
 
 #include "esp_event.h"
@@ -7,10 +11,121 @@
 #include "nvs_flash.h"
 
 #include "wifi_secrets.h"
+#include "mqtt_client.h"
+#include "mqtt_config.h"
+
+static esp_mqtt_client_handle_t mqtt_client=NULL;
+static int mqtt_connected = 0;
 
 static const char *TAG = "tk_comms";
 
 static int connected = 0;
+
+static void mqtt_event_handler(
+    void *arg,
+    esp_event_base_t event_base,
+    int32_t event_id,
+    void *event_data)
+{
+    (void)arg;
+    (void)event_base;
+    (void)event_data;
+
+    if (event_id == MQTT_EVENT_CONNECTED) {
+        mqtt_connected = 1;
+        ESP_LOGI(TAG, "MQTT connected");
+    }
+
+    if (event_id == MQTT_EVENT_DISCONNECTED) {
+        mqtt_connected = 0;
+        ESP_LOGW(TAG, "MQTT disconnected");
+    }
+}
+
+#include <netdb.h>
+#include <arpa/inet.h>
+
+static void debug_dns(void)
+{
+    struct addrinfo hints = {
+        .ai_family = AF_UNSPEC,
+        .ai_socktype = SOCK_STREAM,
+    };
+
+    struct addrinfo *res = NULL;
+
+    int err = getaddrinfo(
+        "mqtt-dev.tilekoumanto.gr",
+        "8883",
+        &hints,
+        &res
+    );
+
+    if (err != 0) {
+        ESP_LOGE(TAG, "getaddrinfo failed: %d", err);
+        return;
+    }
+
+    for (struct addrinfo *p = res; p != NULL; p = p->ai_next) {
+        char addr[INET6_ADDRSTRLEN];
+
+        if (p->ai_family == AF_INET) {
+            struct sockaddr_in *sa = (struct sockaddr_in *)p->ai_addr;
+
+            inet_ntop(
+                AF_INET,
+                &sa->sin_addr,
+                addr,
+                sizeof(addr)
+            );
+
+            ESP_LOGI(TAG, "MQTT DNS IPv4: %s", addr);
+        }
+
+        if (p->ai_family == AF_INET6) {
+            struct sockaddr_in6 *sa6 = (struct sockaddr_in6 *)p->ai_addr;
+
+            inet_ntop(
+                AF_INET6,
+                &sa6->sin6_addr,
+                addr,
+                sizeof(addr)
+            );
+
+            ESP_LOGI(TAG, "MQTT DNS IPv6: %s", addr);
+        }
+    }
+
+    freeaddrinfo(res);
+}
+
+static void test_tcp(void)
+{
+    int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+
+    struct sockaddr_in addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(8883),
+    };
+
+    inet_pton(AF_INET, "10.19.90.65", &addr.sin_addr);
+
+    ESP_LOGI(TAG, "testing TCP to broker...");
+
+    int rc = connect(
+        sock,
+        (struct sockaddr *)&addr,
+        sizeof(addr)
+    );
+
+    if (rc == 0) {
+        ESP_LOGI(TAG, "TCP connection successful");
+    } else {
+        ESP_LOGE(TAG, "TCP connection failed, errno=%d", errno);
+    }
+
+    close(sock);
+}
 
 static void wifi_event_handler(
     void *arg,
@@ -52,6 +167,10 @@ static void wifi_event_handler(
             "Wi-Fi connected, IP=" IPSTR,
             IP2STR(&event->ip_info.ip)
         );
+        // debug_dns();
+        // test_tcp();
+        ESP_ERROR_CHECK(esp_mqtt_client_start(mqtt_client));
+
     }
 }
 
@@ -103,6 +222,41 @@ int tk_comms_init(void)
     );
 
     ESP_ERROR_CHECK(esp_wifi_start());
+
+    extern const unsigned char ca_cert_start[]
+    asm("_binary_ca_crt_start");
+
+    extern const unsigned char client_cert_start[]
+        asm("_binary_device_crt_start");
+
+    extern const unsigned char client_key_start[]
+        asm("_binary_device_key_start");
+
+    esp_mqtt_client_config_t mqtt_cfg = {
+        .broker = {
+            .address.uri = MQTT_BROKER_URI,
+            .verification.certificate = (const char *)ca_cert_start,
+        },
+
+        .credentials = {
+            .authentication = {
+                .certificate = (const char *)client_cert_start,
+                .key = (const char *)client_key_start,
+            },
+        },
+    };
+
+    mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
+
+    ESP_ERROR_CHECK(
+        esp_mqtt_client_register_event(
+            mqtt_client,
+            ESP_EVENT_ANY_ID,
+            mqtt_event_handler,
+            NULL
+        )
+    );
+
 
     return 0;
 }

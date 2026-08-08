@@ -9,5 +9,10 @@ idf_component_register(
         esp_event
         esp_netif
         esp_wifi
+        mqtt
         nvs_flash
+    EMBED_TXTFILES
+        "certs/ca.crt"
+        "certs/device.crt"
+        "certs/device.key"
 )

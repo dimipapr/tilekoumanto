@@ -1,2 +1,3 @@
 build
 config/wifi_secrets.h
+app/certs
