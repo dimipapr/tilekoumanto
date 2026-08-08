@@ -7,6 +7,7 @@ COMPOSE := docker compose
 
 STM32_DIR := device/targets/firmware/stm32
 STM32_BUILD_DIR := $(STM32_DIR)/build/debug
+STM32_CMAKE_CACHE := $(STM32_BUILD_DIR)/CMakeCache.txt
 STM32_ELF := $(STM32_BUILD_DIR)/tilekoumanto_stm32.elf
 STM32_BIN := $(STM32_BUILD_DIR)/tilekoumanto_stm32.bin
 
@@ -163,13 +164,15 @@ clean:
 	find . -type d -name "__pycache__" -prune -exec rm -rf {} +
 	find . -type d -name ".pytest_cache" -prune -exec rm -rf {} +
 
-.PHONY: stm32-build
-stm32-build:
-	cd $(STM32_DIR) && cmake -S . -B build/debug \
-		-DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake \
+$(STM32_CMAKE_CACHE):
+	cmake -S $(STM32_DIR) -B $(STM32_BUILD_DIR) \
+		-DCMAKE_TOOLCHAIN_FILE=$(CURDIR)/$(STM32_DIR)/cmake/arm-none-eabi.cmake \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-	cd $(STM32_DIR) && cmake --build build/debug
 
+.PHONY: stm32-build
+stm32-build: $(STM32_CMAKE_CACHE)
+	cmake --build $(STM32_BUILD_DIR)
+	
 .PHONY: stm32-flash
 stm32-flash: stm32-build
 	openocd \
