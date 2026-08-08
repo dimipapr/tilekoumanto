@@ -37,6 +37,7 @@ UNIX_TIME_MS_CB = ctypes.CFUNCTYPE(ctypes.c_uint64)
 READ_TELEMETRY_CB = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.POINTER(Telemetry))
 PUBLISH_TELEMETRY_CB = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.POINTER(Telemetry))
 SHOULD_STOP_CB = ctypes.CFUNCTYPE(ctypes.c_int)
+STATUS_LED_TOGGLE_CB = ctypes.CFUNCTYPE(ctypes.c_int)
 
 class Platform(ctypes.Structure):
     _fields_ = [
@@ -45,6 +46,7 @@ class Platform(ctypes.Structure):
         ("read_telemetry", READ_TELEMETRY_CB),
         ("publish_telemetry", PUBLISH_TELEMETRY_CB),
         ("should_stop", SHOULD_STOP_CB),
+        ("status_led_toggle", STATUS_LED_TOGGLE_CB),
     ]
 
 

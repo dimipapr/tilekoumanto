@@ -10,6 +10,7 @@ from ffi.core import (
     PUBLISH_TELEMETRY_CB,
     READ_TELEMETRY_CB,
     SHOULD_STOP_CB,
+    STATUS_LED_TOGGLE_CB,
     UNIX_TIME_MS_CB,
     Platform,
 )
@@ -34,6 +35,7 @@ def main() -> int:
     read_telemetry_cb = READ_TELEMETRY_CB(sim.read_telemetry)
     publish_telemetry_cb = PUBLISH_TELEMETRY_CB(sim.publish_telemetry)
     should_stop_cb = SHOULD_STOP_CB(should_stop)
+    status_led_toggle_cb = STATUS_LED_TOGGLE_CB()
 
     platform = Platform(
         log=log_cb,
@@ -41,6 +43,7 @@ def main() -> int:
         read_telemetry=read_telemetry_cb,
         publish_telemetry=publish_telemetry_cb,
         should_stop=should_stop_cb,
+        status_led_toggle=status_led_toggle_cb,
     )
 
     print(f"tilekoumanto core version: {core.version()}")
