@@ -444,3 +444,22 @@ STM32
 The STM32 telemetry timestamp is still based on runtime milliseconds and is not real Unix time.
 
 UART acknowledgements, delivery retries, offline buffering, Ethernet, and cellular connectivity remain deferred.
+
+## 2026-08-09 ESP32 firmware cleanup
+
+Refactored the validated ESP32 implementation without changing the telemetry path.
+
+* Extracted STM32 UART handling from `app/main.c` into `platform/tk_stm32_link.c` and `tk_stm32_link.h`.
+* The STM32 link now owns UART1 initialization, GPIO17 RX pull-up configuration, newline framing, oversized-message rejection, and an internal fixed-size FreeRTOS queue.
+* UART reception and message processing now run as separate blocking tasks.
+* The STM32 link remains independent of telemetry, MQTT, and network connectivity.
+* Moved LED initialization and blinking into a dedicated FreeRTOS task.
+* `app_main()` now initializes services, creates the application tasks, and returns.
+* Replaced transport-specific connectivity checks with `tk_comms_is_ready()`.
+* Application code no longer depends directly on MQTT connection state.
+* Wi-Fi and MQTT remain combined inside `tk_comms`; Ethernet and cellular abstractions were not implemented.
+
+Refactored core logic.
+
+* extracted telemetry JSON serialization
+
