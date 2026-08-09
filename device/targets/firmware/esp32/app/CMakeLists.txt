@@ -1,11 +1,11 @@
 idf_component_register(
-    SRCS 
+    SRCS
         "main.c"
         "../platform/tk_comms.c"
-    INCLUDE_DIRS
+    PRIV_INCLUDE_DIRS
         "../platform"
         "../config"
-    REQUIRES
+    PRIV_REQUIRES
         esp_event
         esp_netif
         esp_wifi
