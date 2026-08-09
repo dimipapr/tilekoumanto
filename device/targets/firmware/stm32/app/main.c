@@ -1,6 +1,8 @@
 // device/targets/firmware/stm32/app/main.c
 
+#include <inttypes.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "stm32f4xx.h"
 #include "stm32f4xx_ll_bus.h"
@@ -30,6 +32,8 @@
 #define USART1_TX_GPIO_PORT GPIOA
 #define USART1_TX_PIN LL_GPIO_PIN_9
 
+#define TELEMETRY_PAYLOAD_SIZE 256
+
 static void inputs_init(void);
 static void clock_init(void);
 static void led_init(void);
@@ -56,6 +60,41 @@ static const tk_platform_t platform = {
         .should_stop = stm32_should_stop,
         .status_led_toggle = stm32_status_led_toggle
     };
+
+static const char *mains_power_to_string(tk_mains_power_state_t state);
+static const char *pump_relay_to_string(tk_pump_relay_state_t state);
+
+static const char *mains_power_to_string(
+    tk_mains_power_state_t state
+){
+    switch (state){
+        case TK_MAINS_POWER_PRESENT:
+            return "present";
+
+        case TK_MAINS_POWER_NOT_PRESENT:
+            return "not_present";
+
+        case TK_MAINS_POWER_FAULT:
+        default:
+            return "fault";
+    }
+}
+
+static const char *pump_relay_to_string(
+    tk_pump_relay_state_t state
+){
+    switch (state){
+        case TK_PUMP_RELAY_ACTIVE:
+            return "active";
+
+        case TK_PUMP_RELAY_INACTIVE:
+            return "inactive";
+
+        case TK_PUMP_RELAY_FAULT:
+        default:
+            return "fault";
+    }
+}
 
 int main(void)
 {
@@ -254,11 +293,45 @@ static int stm32_read_telemetry(tk_telemetry_t *out){
     return 0;
 }
 
-static int stm32_publish_telemetry(const tk_telemetry_t *telemetry){
-    (void)telemetry;
+static int stm32_publish_telemetry(
+    const tk_telemetry_t *telemetry
+){
+    if (telemetry == 0){
+        return -1;
+    }
 
-    usart1_write_string("uart 1 ok!!\r\n");
-    usart2_write_string("uart 1 test sent!\r\n");
+    char payload[TELEMETRY_PAYLOAD_SIZE];
+
+    int length = snprintf(
+        payload,
+        sizeof(payload),
+        "{\"meta\":{\"unix_time_ms\":%" PRIu64
+        ",\"seq\":%" PRIu32 "},"
+        "\"payload\":{\"readings\":{"
+        "\"mains_power\":\"%s\","
+        "\"pump_relay\":\"%s\"},"
+        "\"faults\":[]}}\n",
+        telemetry->unix_time_ms,
+        telemetry->seq,
+        mains_power_to_string(telemetry->mains_power),
+        pump_relay_to_string(telemetry->pump_relay)
+    );
+
+    if (length < 0 ||
+        (size_t)length >= sizeof(payload)){
+
+        usart2_write_string(
+            "telemetry serialization failed\r\n"
+        );
+
+        return -1;
+    }
+
+    usart1_write_string(payload);
+    usart2_write_string("telemetry sent to ESP32:");
+    usart2_write_string(payload);
+    usart2_write_string("\r\n");
+
 
     return 0;
 }

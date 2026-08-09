@@ -20,32 +20,93 @@ static const char *TAG = "tilekoumanto";
 #define STM32_UART_RX_GPIO GPIO_NUM_17
 #define STM32_UART_RX_BUFFER_SIZE 256
 
-static const char *TELEMETRY_PAYLOAD =
-    "{\"meta\":{\"unix_time_ms\":0,\"seq\":0},"
-    "\"payload\":{\"readings\":{\"mains_power\":\"present\","
-    "\"pump_relay\":\"inactive\"},\"faults\":[]}}";
-
 static void stm32_uart_receive_task(void *arg){
     (void)arg;
 
-    uint8_t data[64];
+    char payload[STM32_UART_RX_BUFFER_SIZE];
+    size_t payload_length = 0;
+    int discard_line = 0;
 
-    while(1){
+    while (1){
+        uint8_t byte;
+
         int length = uart_read_bytes(
             STM32_UART,
-            data,
-            sizeof(data),
-            pdMS_TO_TICKS(100)
+            &byte,
+            1,
+            portMAX_DELAY
         );
 
-        if (length > 0){
-            ESP_LOGI(
-                TAG,
-                "STM32 UART RX: %.*s",
-                length,
-                (const char *)data
-            );
+        if (length != 1){
+            continue;
         }
+
+        if (byte == '\r'){
+            continue;
+        }
+
+        if (byte == '\n'){
+            if (discard_line){
+                discard_line = 0;
+                payload_length = 0;
+                continue;
+            }
+
+            if (payload_length == 0){
+                continue;
+            }
+
+            payload[payload_length] = '\0';
+
+            if (payload[0] != '{' ||
+                payload[payload_length - 1] != '}'){
+
+                ESP_LOGW(TAG, "Ignoring invalid STM32 UART line");
+                payload_length = 0;
+                continue;
+            }
+
+            if (!tk_comms_mqtt_is_connected()){
+                ESP_LOGW(
+                    TAG,
+                    "Dropping STM32 telemetry: MQTT disconnected"
+                );
+
+                payload_length = 0;
+                continue;
+            }
+
+            int message_id = tk_comms_publish(
+                TELEMETRY_TOPIC,
+                payload
+            );
+
+            if (message_id >= 0){
+                ESP_LOGI(
+                    TAG,
+                    "STM32 telemetry queued, message_id=%d",
+                    message_id
+                );
+            } else {
+                ESP_LOGW(
+                    TAG,
+                    "STM32 telemetry publish failed"
+                );
+            }
+
+            payload_length = 0;
+            continue;
+        }
+
+        if (payload_length >= sizeof(payload) - 1){
+            ESP_LOGW(TAG, "STM32 UART line too long");
+            payload_length = 0;
+            discard_line = 1;
+            continue;
+        }
+
+        payload[payload_length] = (char)byte;
+        payload_length++;
     }
 }
 
@@ -93,7 +154,7 @@ static void stm32_uart_init(void){
         xTaskCreate(
             stm32_uart_receive_task,
             "stm32_uart_rx",
-            2048,
+            4096,
             NULL,
             5,
             NULL
@@ -134,28 +195,7 @@ void app_main(void){
         )
     );
 
-    int test_telemetry_published = 0;
     while (1) {
-        if (!test_telemetry_published &&
-            tk_comms_mqtt_is_connected()){
-
-            int message_id = tk_comms_publish(
-                TELEMETRY_TOPIC,
-                TELEMETRY_PAYLOAD
-            );
-
-            if (message_id >= 0){
-                test_telemetry_published = 1;
-
-                ESP_LOGI(
-                    TAG,
-                    "Test telemetry queued, message_id=%d",
-                    message_id
-                );
-            } else {
-                ESP_LOGW(TAG, "Test telemetry publish failed");
-            }
-        }
         ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, 0, 0, 1, 0));
         ESP_ERROR_CHECK(led_strip_refresh(led_strip));
         vTaskDelay(pdMS_TO_TICKS(LED_BLINK_INTERVAL_MS));
