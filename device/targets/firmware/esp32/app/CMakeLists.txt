@@ -6,6 +6,8 @@ idf_component_register(
         "../platform"
         "../config"
     PRIV_REQUIRES
+        esp_driver_gpio
+        esp_driver_uart
         esp_event
         esp_netif
         esp_wifi

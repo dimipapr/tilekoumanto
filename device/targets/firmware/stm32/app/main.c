@@ -27,12 +27,18 @@
 #define USART_TX_PIN LL_GPIO_PIN_2
 #define USART_BAUDRATE 115200U
 
+#define USART1_TX_GPIO_PORT GPIOA
+#define USART1_TX_PIN LL_GPIO_PIN_9
+
 static void inputs_init(void);
 static void clock_init(void);
 static void led_init(void);
 static void usart2_init(void);
 static void usart2_write_char(char ch);
 static void usart2_write_string(const char *text);
+static void usart1_init(void);
+static void usart1_write_char(char ch);
+static void usart1_write_string(const char *text);
 
 static void stm32_log(const char *message);
 static uint64_t stm32_unix_time_ms(void);
@@ -59,6 +65,7 @@ int main(void)
     led_init();
     inputs_init();
     usart2_init();
+    usart1_init();
 
     usart2_write_string("tilekoumanto stm32 alive\r\n");
 
@@ -172,6 +179,53 @@ static void usart2_write_string(const char *text)
     }
 }
 
+static void usart1_init(void){
+    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
+    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
+
+    LL_GPIO_InitTypeDef gpio = {0};
+
+    gpio.Pin = USART1_TX_PIN;
+    gpio.Mode = LL_GPIO_MODE_ALTERNATE;
+    gpio.Speed = LL_GPIO_SPEED_FREQ_HIGH;
+    gpio.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+    gpio.Pull = LL_GPIO_PULL_UP;
+    gpio.Alternate = LL_GPIO_AF_7;
+
+    LL_GPIO_Init(USART1_TX_GPIO_PORT, &gpio);
+
+    LL_USART_InitTypeDef usart = {0};
+
+    usart.BaudRate = USART_BAUDRATE;
+    usart.DataWidth = LL_USART_DATAWIDTH_8B;
+    usart.StopBits = LL_USART_STOPBITS_1;
+    usart.Parity = LL_USART_PARITY_NONE;
+    usart.TransferDirection = LL_USART_DIRECTION_TX;
+    usart.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
+    usart.OverSampling = LL_USART_OVERSAMPLING_16;
+
+    LL_USART_Init(USART1, &usart);
+    LL_USART_ConfigAsyncMode(USART1);
+    LL_USART_Enable(USART1);
+}
+
+static void usart1_write_char(char ch){
+    while (LL_USART_IsActiveFlag_TXE(USART1) == 0){
+    }
+
+    LL_USART_TransmitData8(USART1, (uint8_t)ch);
+}
+
+static void usart1_write_string(const char *text){
+    while (*text != '\0'){
+        usart1_write_char(*text);
+        text++;
+    }
+
+    while (LL_USART_IsActiveFlag_TC(USART1) == 0){
+    }
+}
+
 static void stm32_log(const char *message){
     usart2_write_string(message);
     usart2_write_string("\r\n");
@@ -203,7 +257,9 @@ static int stm32_read_telemetry(tk_telemetry_t *out){
 static int stm32_publish_telemetry(const tk_telemetry_t *telemetry){
     (void)telemetry;
 
-    usart2_write_string("stm32 publish stub\r\n");
+    usart1_write_string("uart 1 ok!!\r\n");
+    usart2_write_string("uart 1 test sent!\r\n");
+
     return 0;
 }
 
