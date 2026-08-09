@@ -409,3 +409,38 @@ Brought up the ESP32 communications path through authenticated MQTT/TLS.
 - configured mutual TLS with broker CA verification and client certificate authentication
 - validated the full ESP32 → Wi-Fi → MQTT/mTLS → Mosquitto connection on hardware
 - temporarily embedded certificates in the firmware for bring-up; separate certificate provisioning and private-key protection are deferred
+
+## 2026-08-09 STM32-to-ESP32 telemetry path
+
+Validated telemetry delivery through the two-processor device path.
+
+The STM32 now:
+
+* reads the current mains and pump relay inputs
+* creates the backend-facing JSON telemetry payload
+* sends newline-delimited telemetry through USART1 on PA9
+
+The ESP32 now:
+
+* receives STM32 telemetry through UART1 on GPIO17
+* reconstructs complete newline-delimited payloads
+* publishes received payloads over MQTT with QoS 1
+
+The UART link was validated at 115200 baud, 8 data bits, no parity, and 1 stop bit. An ESP32 RX pull-up prevents noise while the STM32 is resetting.
+
+Validated end-to-end path:
+
+```text
+STM32
+→ USART1
+→ ESP32 UART1
+→ Wi-Fi
+→ MQTT over mTLS
+→ Mosquitto
+→ Django ingestion
+→ PostgreSQL
+```
+
+The STM32 telemetry timestamp is still based on runtime milliseconds and is not real Unix time.
+
+UART acknowledgements, delivery retries, offline buffering, Ethernet, and cellular connectivity remain deferred.
