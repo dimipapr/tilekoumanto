@@ -48,6 +48,7 @@ endif()
 
 add_library(tilekoumanto_logic STATIC
     src/tk_telemetry.c
+    src/tk_telemetry_json.c
 )
 
 target_include_directories(tilekoumanto_logic PUBLIC
@@ -130,5 +131,17 @@ if(BUILD_TESTING AND NOT CMAKE_CROSSCOMPILING)
     add_test(
         NAME test_logic
         COMMAND test_logic
+    )
+        add_executable(test_telemetry_json
+        tests/test_telemetry_json.c
+    )
+
+    target_link_libraries(test_telemetry_json PRIVATE
+        tilekoumanto_logic
+    )
+
+    add_test(
+        NAME test_telemetry_json
+        COMMAND test_telemetry_json
     )
 endif()
