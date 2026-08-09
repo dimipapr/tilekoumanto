@@ -10,11 +10,12 @@
 #include "mqtt_config.h"
 #include "wifi_secrets.h"
 
+#include <stdbool.h>
+
 static const char *TAG = "tk_comms";
 
 static esp_mqtt_client_handle_t mqtt_client = NULL;
-static int mqtt_connected = 0;
-static int connected = 0;
+static bool mqtt_connected = false;
 
 static void mqtt_event_handler(
     void *arg,
@@ -27,12 +28,12 @@ static void mqtt_event_handler(
     esp_mqtt_event_handle_t event = event_data;
 
     if (event_id == MQTT_EVENT_CONNECTED){
-        mqtt_connected = 1;
+        mqtt_connected = true;
         ESP_LOGI(TAG, "MQTT connected");
     }
 
     if (event_id == MQTT_EVENT_DISCONNECTED){
-        mqtt_connected = 0;
+        mqtt_connected = false;
         ESP_LOGW(TAG, "MQTT disconnected");
     }
 
@@ -64,8 +65,6 @@ static void wifi_event_handler(
 
         wifi_event_sta_disconnected_t *event = event_data;
 
-        connected = 0;
-
         ESP_LOGW(
             TAG,
             "Wi-Fi disconnected, reason=%d",
@@ -78,8 +77,6 @@ static void wifi_event_handler(
 
         ip_event_got_ip_t *event = event_data;
 
-        connected = 1;
-
         ESP_LOGI(
             TAG,
             "Wi-Fi connected, IP=" IPSTR,
@@ -90,7 +87,7 @@ static void wifi_event_handler(
     }
 }
 
-int tk_comms_init(void){
+esp_err_t tk_comms_init(void){
     ESP_ERROR_CHECK(nvs_flash_init());
 
     ESP_ERROR_CHECK(esp_netif_init());
@@ -174,14 +171,10 @@ int tk_comms_init(void){
         )
     );
 
-    return 0;
+    return ESP_OK;
 }
 
-int tk_comms_is_connected(void){
-    return connected;
-}
-
-int tk_comms_mqtt_is_connected(void){
+bool tk_comms_is_ready(void){
     return mqtt_connected;
 }
 

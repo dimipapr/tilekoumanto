@@ -99,10 +99,10 @@ static void stm32_message_task(void *arg){
             continue;
         }
 
-        if (!tk_comms_mqtt_is_connected()){
+        if (!tk_comms_is_ready()){
             ESP_LOGW(
                 TAG,
-                "Dropping STM32 telemetry: MQTT disconnected"
+                "Dropping STM32 telemetry: communications unavailable"
             );
 
             continue;
