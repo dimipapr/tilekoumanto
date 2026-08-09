@@ -2,6 +2,7 @@ idf_component_register(
     SRCS
         "main.c"
         "../platform/tk_comms.c"
+        "../platform/tk_stm32_link.c"
     PRIV_INCLUDE_DIRS
         "../platform"
         "../config"
