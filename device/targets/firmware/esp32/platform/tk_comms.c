@@ -24,7 +24,7 @@ static void mqtt_event_handler(
 ){
     (void)arg;
     (void)event_base;
-    (void)event_data;
+    esp_mqtt_event_handle_t event = event_data;
 
     if (event_id == MQTT_EVENT_CONNECTED){
         mqtt_connected = 1;
@@ -35,6 +35,14 @@ static void mqtt_event_handler(
         mqtt_connected = 0;
         ESP_LOGW(TAG, "MQTT disconnected");
     }
+
+    if (event_id == MQTT_EVENT_PUBLISHED){
+    ESP_LOGI(
+        TAG,
+        "MQTT message published, message_id=%d",
+        event->msg_id
+    );
+}
 }
 
 static void wifi_event_handler(
@@ -171,4 +179,29 @@ int tk_comms_init(void){
 
 int tk_comms_is_connected(void){
     return connected;
+}
+
+int tk_comms_mqtt_is_connected(void){
+    return mqtt_connected;
+}
+
+int tk_comms_publish(
+    const char *topic,
+    const char *payload
+){
+    if (mqtt_client == NULL ||
+        !mqtt_connected ||
+        topic == NULL ||
+        payload == NULL){
+            return -1;
+        }
+    
+        return esp_mqtt_client_publish(
+            mqtt_client,
+            topic,
+            payload,
+            0,
+            1,
+            0
+        );
 }
