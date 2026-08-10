@@ -1,5 +1,3 @@
-// device/targets/firmware/stm32/app/main.c
-
 #include <stdint.h>
 
 #include "stm32f4xx.h"
@@ -11,6 +9,7 @@
 #include "stm32f4xx_ll_utils.h"
 
 #include "tk_core.h"
+#include "tk_esp32_link.h"
 #include "tk_platform.h"
 #include "tk_telemetry_json.h"
 #include "tk_types.h"
@@ -24,24 +23,18 @@
 #define PUMP_STATUS_GPIO_PORT GPIOC
 #define PUMP_STATUS_PIN LL_GPIO_PIN_1
 
-#define USART_TX_GPIO_PORT GPIOA
-#define USART_TX_PIN LL_GPIO_PIN_2
-#define USART_BAUDRATE 115200U
-
-#define USART1_TX_GPIO_PORT GPIOA
-#define USART1_TX_PIN LL_GPIO_PIN_9
+#define USART2_TX_GPIO_PORT GPIOA
+#define USART2_TX_PIN LL_GPIO_PIN_2
+#define USART2_BAUDRATE 115200U
 
 #define TELEMETRY_PAYLOAD_SIZE 256
 
-static void inputs_init(void);
 static void clock_init(void);
 static void led_init(void);
+static void inputs_init(void);
 static void usart2_init(void);
 static void usart2_write_char(char ch);
 static void usart2_write_string(const char *text);
-static void usart1_init(void);
-static void usart1_write_char(char ch);
-static void usart1_write_string(const char *text);
 
 static void stm32_log(const char *message);
 static uint64_t stm32_unix_time_ms(void);
@@ -50,27 +43,22 @@ static int stm32_publish_telemetry(const tk_telemetry_t *telemetry);
 static int stm32_should_stop(void);
 static int stm32_status_led_toggle(void);
 
-
 static const tk_platform_t platform = {
-        .log = stm32_log,
-        .unix_time_ms = stm32_unix_time_ms,
-        .read_telemetry = stm32_read_telemetry,
-        .publish_telemetry = stm32_publish_telemetry,
-        .should_stop = stm32_should_stop,
-        .status_led_toggle = stm32_status_led_toggle
-    };
-
-
+    .log = stm32_log,
+    .unix_time_ms = stm32_unix_time_ms,
+    .read_telemetry = stm32_read_telemetry,
+    .publish_telemetry = stm32_publish_telemetry,
+    .should_stop = stm32_should_stop,
+    .status_led_toggle = stm32_status_led_toggle
+};
 
 int main(void)
 {
-
-
     clock_init();
     led_init();
     inputs_init();
     usart2_init();
-    usart1_init();
+    tk_esp32_link_init();
 
     usart2_write_string("tilekoumanto stm32 alive\r\n");
 
@@ -78,30 +66,14 @@ int main(void)
 
     usart2_write_string("tk_core_run returned unexpectedly\r\n");
 
-    for(;;){};
-}
-
-static int stm32_status_led_toggle(void){
-    LL_GPIO_TogglePin(LED_GPIO_PORT, LED_PIN);
-    return 0;
-}
-
-static void inputs_init(void)
-{
-    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOC);
-
-    LL_GPIO_InitTypeDef gpio = {0};
-
-    gpio.Pin = MAINS_STATUS_PIN | PUMP_STATUS_PIN;
-    gpio.Mode = LL_GPIO_MODE_INPUT;
-    gpio.Pull = LL_GPIO_PULL_UP;
-
-    LL_GPIO_Init(GPIOC, &gpio);
+    for (;;) {
+    }
 }
 
 static void clock_init(void)
 {
     LL_RCC_HSI_Enable();
+
     while (LL_RCC_HSI_IsReady() != 1) {
     }
 
@@ -110,6 +82,7 @@ static void clock_init(void)
     LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
 
     LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+
     while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
     }
 
@@ -134,6 +107,19 @@ static void led_init(void)
     LL_GPIO_Init(LED_GPIO_PORT, &gpio);
 }
 
+static void inputs_init(void)
+{
+    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOC);
+
+    LL_GPIO_InitTypeDef gpio = {0};
+
+    gpio.Pin = MAINS_STATUS_PIN | PUMP_STATUS_PIN;
+    gpio.Mode = LL_GPIO_MODE_INPUT;
+    gpio.Pull = LL_GPIO_PULL_UP;
+
+    LL_GPIO_Init(MAINS_STATUS_GPIO_PORT, &gpio);
+}
+
 static void usart2_init(void)
 {
     LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
@@ -141,18 +127,18 @@ static void usart2_init(void)
 
     LL_GPIO_InitTypeDef gpio = {0};
 
-    gpio.Pin = USART_TX_PIN;
+    gpio.Pin = USART2_TX_PIN;
     gpio.Mode = LL_GPIO_MODE_ALTERNATE;
     gpio.Speed = LL_GPIO_SPEED_FREQ_HIGH;
     gpio.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
     gpio.Pull = LL_GPIO_PULL_UP;
     gpio.Alternate = LL_GPIO_AF_7;
 
-    LL_GPIO_Init(USART_TX_GPIO_PORT, &gpio);
+    LL_GPIO_Init(USART2_TX_GPIO_PORT, &gpio);
 
     LL_USART_InitTypeDef usart = {0};
 
-    usart.BaudRate = USART_BAUDRATE;
+    usart.BaudRate = USART2_BAUDRATE;
     usart.DataWidth = LL_USART_DATAWIDTH_8B;
     usart.StopBits = LL_USART_STOPBITS_1;
     usart.Parity = LL_USART_PARITY_NONE;
@@ -184,112 +170,78 @@ static void usart2_write_string(const char *text)
     }
 }
 
-static void usart1_init(void){
-    LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOA);
-    LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
-
-    LL_GPIO_InitTypeDef gpio = {0};
-
-    gpio.Pin = USART1_TX_PIN;
-    gpio.Mode = LL_GPIO_MODE_ALTERNATE;
-    gpio.Speed = LL_GPIO_SPEED_FREQ_HIGH;
-    gpio.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-    gpio.Pull = LL_GPIO_PULL_UP;
-    gpio.Alternate = LL_GPIO_AF_7;
-
-    LL_GPIO_Init(USART1_TX_GPIO_PORT, &gpio);
-
-    LL_USART_InitTypeDef usart = {0};
-
-    usart.BaudRate = USART_BAUDRATE;
-    usart.DataWidth = LL_USART_DATAWIDTH_8B;
-    usart.StopBits = LL_USART_STOPBITS_1;
-    usart.Parity = LL_USART_PARITY_NONE;
-    usart.TransferDirection = LL_USART_DIRECTION_TX;
-    usart.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
-    usart.OverSampling = LL_USART_OVERSAMPLING_16;
-
-    LL_USART_Init(USART1, &usart);
-    LL_USART_ConfigAsyncMode(USART1);
-    LL_USART_Enable(USART1);
-}
-
-static void usart1_write_char(char ch){
-    while (LL_USART_IsActiveFlag_TXE(USART1) == 0){
-    }
-
-    LL_USART_TransmitData8(USART1, (uint8_t)ch);
-}
-
-static void usart1_write_string(const char *text){
-    while (*text != '\0'){
-        usart1_write_char(*text);
-        text++;
-    }
-
-    while (LL_USART_IsActiveFlag_TC(USART1) == 0){
-    }
-}
-
-static void stm32_log(const char *message){
+static void stm32_log(const char *message)
+{
     usart2_write_string(message);
     usart2_write_string("\r\n");
 }
 
-static uint64_t stm32_unix_time_ms(void){
-    //bringup stub
+static uint64_t stm32_unix_time_ms(void)
+{
     return (uint64_t)tk_core_runtime_ms();
 }
 
-static int stm32_read_telemetry(tk_telemetry_t *out){
-    if (out == 0)return -1;
+static int stm32_read_telemetry(tk_telemetry_t *out)
+{
+    if (out == 0) {
+        return -1;
+    }
 
     out->mains_power =
-            LL_GPIO_IsInputPinSet(MAINS_STATUS_GPIO_PORT, MAINS_STATUS_PIN)
+        LL_GPIO_IsInputPinSet(MAINS_STATUS_GPIO_PORT, MAINS_STATUS_PIN)
             ? TK_MAINS_POWER_NOT_PRESENT
             : TK_MAINS_POWER_PRESENT;
 
     out->pump_relay =
-            LL_GPIO_IsInputPinSet(PUMP_STATUS_GPIO_PORT, PUMP_STATUS_PIN)
+        LL_GPIO_IsInputPinSet(PUMP_STATUS_GPIO_PORT, PUMP_STATUS_PIN)
             ? TK_PUMP_RELAY_INACTIVE
             : TK_PUMP_RELAY_ACTIVE;
+
     out->unix_time_ms = stm32_unix_time_ms();
     out->seq = 0;
 
     return 0;
 }
 
-static int stm32_publish_telemetry(
-    const tk_telemetry_t *telemetry
-){
-
+static int stm32_publish_telemetry(const tk_telemetry_t *telemetry)
+{
     char payload[TELEMETRY_PAYLOAD_SIZE];
+
     int length = tk_telemetry_json_serialize(
         telemetry,
         payload,
         sizeof(payload)
     );
 
-    if (length < 0){
-        usart2_write_string(
-            "telemetry serialization failed\r\n"
-        );
+    if (length < 0) {
+        stm32_log("telemetry serialization failed");
         return -1;
     }
-    
-    usart1_write_string(payload);
-    usart1_write_string("\n");
-    
+
+    if (tk_esp32_link_send(payload) != 0) {
+        stm32_log("telemetry send failed");
+        return -1;
+    }
+
     usart2_write_string("telemetry sent to ESP32:");
     usart2_write_string(payload);
     usart2_write_string("\r\n");
 
-
     return 0;
 }
 
-static int stm32_should_stop(void){return 0;}
+static int stm32_should_stop(void)
+{
+    return 0;
+}
 
-void vApplicationIdleHook(void){
+static int stm32_status_led_toggle(void)
+{
+    LL_GPIO_TogglePin(LED_GPIO_PORT, LED_PIN);
+    return 0;
+}
+
+void vApplicationIdleHook(void)
+{
     __WFI();
 }

@@ -55,6 +55,7 @@ add_subdirectory(
 add_executable(${TARGET_NAME}.elf
     app/main.c
 
+    platform/tk_esp32_link.c
     platform/system_stm32f4xx.c
     platform/startup_stm32f446xx.s
 
@@ -75,6 +76,7 @@ target_include_directories(${TARGET_NAME}.elf PRIVATE
     third_party/stm32f4xx-hal-driver/Inc
 
     ${CMAKE_CURRENT_SOURCE_DIR}/config
+    ${CMAKE_CURRENT_SOURCE_DIR}/platform
     ${TK_CORE_ROOT}/config
     ${TK_CORE_ROOT}/include
 )
