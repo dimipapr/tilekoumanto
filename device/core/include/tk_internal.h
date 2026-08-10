@@ -5,7 +5,15 @@
 
 #include "tk_platform.h"
 
-void tk_log(const tk_platform_t *platform, const char *format, ...);
+typedef struct
+{
+    const tk_platform_t *platform;
+}tk_log_task_context_t;
+
 int tk_core_stop_requested(void);
+
+void tk_log_task(void *argument);
+
+int tk_log_runtime_init(void);
 
 #endif

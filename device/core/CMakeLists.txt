@@ -82,6 +82,7 @@ add_library(tilekoumanto_core
     src/tk_core.c
     src/tk_telemetry_task.c
     src/tk_status_task.c
+    src/tk_log.c
 )
 
 target_include_directories(tilekoumanto_core PUBLIC

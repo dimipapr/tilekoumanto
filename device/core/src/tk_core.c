@@ -2,23 +2,21 @@
 
 #include "tk_core.h"
 #include "tk_internal.h"
-#include "tk_telemetry.h"
+#include "tk_log.h"
 #include "tk_status.h"
+#include "tk_telemetry.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
 
-// #include <inttypes.h>
-#include <stdarg.h>
 #include <stdint.h>
-#include <stdio.h>
 
-#define TK_LOG_BUFFER_SIZE 128
-
+#define TK_LOG_TASK_STACK_WORDS 256U
 #define TK_TELEMETRY_TASK_STACK_WORDS 512
 #define TK_STATUS_TASK_STACK_WORDS 128
 #define TK_IDLE_TASK_STACK_WORDS configMINIMAL_STACK_SIZE
 
+static tk_log_task_context_t g_log_task_context;
 static tk_telemetry_task_context_t g_telemetry_task_context;
 static tk_status_task_context_t g_status_task_context;
 
@@ -26,6 +24,9 @@ static const tk_platform_t *g_platform = 0;
 
 static StaticTask_t g_idle_task_tcb;
 static StackType_t g_idle_task_stack[TK_IDLE_TASK_STACK_WORDS];
+
+static StaticTask_t g_log_task_tcb;
+static StackType_t g_log_task_stack[TK_LOG_TASK_STACK_WORDS];
 
 static StaticTask_t g_telemetry_task_tcb;
 static StackType_t g_telemetry_task_stack[TK_TELEMETRY_TASK_STACK_WORDS];
@@ -61,49 +62,9 @@ void vApplicationStackOverflowHook(TaskHandle_t task, char *task_name)
     }
 }
 
-void tk_log(const tk_platform_t *platform, const char *format, ...)
-{
-    char buffer[TK_LOG_BUFFER_SIZE];
-    va_list args;
-    int written;
-
-    if (platform == 0 || platform->log == 0 || format == 0) {
-        return;
-    }
-
-    va_start(args, format);
-    written = vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-
-    if (written < 0) {
-        platform->log("core log formatting failed");
-        return;
-    }
-
-    buffer[sizeof(buffer) - 1U] = '\0';
-
-    platform->log(buffer);
-}
-
 int tk_core_version(void)
 {
     return 1;
-}
-
-int tk_core_run(const tk_platform_t *platform)
-{
-
-    if (tk_core_setup(platform) != 0)return -1;
-    tk_log(platform, "core creating tasks");
-
-    if (tk_core_create_tasks() != 0) return -1;
-    tk_log(platform, "core starting scheduler");
-
-    vTaskStartScheduler();
-
-    tk_log(platform, "core scheduler stopped unexpectedly");
-
-    return -1;
 }
 
 static int tk_core_setup(const tk_platform_t *platform){
@@ -115,15 +76,69 @@ static int tk_core_setup(const tk_platform_t *platform){
 
     g_platform = platform;
 
-    tk_log(platform, "core starting");
-    // tk_log(platform, "core platform time ms: %" PRIu64, platform->unix_time_ms());
+    if (tk_log_runtime_init() != 0){
+        (void)tk_log_sync(
+            platform,
+            "core log queue creation failed"
+        );
+        return -1;
+    }
+
+    (void)tk_log_sync(platform, "core starting");
 
     return 0;
 }
 
+int tk_core_run(const tk_platform_t *platform)
+{
+
+    if (tk_core_setup(platform) != 0)return -1;
+    (void)tk_log_sync(platform, "core creating tasks");
+
+    if (tk_core_create_tasks() != 0) return -1;
+    (void)tk_log_sync(platform, "core starting scheduler");
+
+    vTaskStartScheduler();
+
+    (void)tk_log_sync(platform, "core scheduler stopped unexpectedly");
+
+    return -1;
+}
+
+uint64_t tk_core_runtime_ms(void){
+    return (uint64_t)xTaskGetTickCount() * (uint64_t)portTICK_PERIOD_MS;
+}
+
 static int tk_core_create_tasks(void)
 {
+    TaskHandle_t log_task;
+    TaskHandle_t status_task;
     TaskHandle_t telemetry_task;
+
+    g_log_task_context.platform = g_platform;
+
+    log_task = xTaskCreateStatic(
+        tk_log_task,
+        "logger",
+        TK_LOG_TASK_STACK_WORDS,
+        &g_log_task_context,
+        tskIDLE_PRIORITY,
+        g_log_task_stack,
+        &g_log_task_tcb
+    );
+
+    if (log_task == 0){
+        (void)tk_log_sync(
+            g_platform,
+            "logger task creation failed"
+        );
+        return -1;
+    }
+
+    (void)tk_log_sync(
+        g_platform,
+        "logger task created"
+    );
 
     g_telemetry_task_context.platform = g_platform;
     
@@ -139,13 +154,11 @@ static int tk_core_create_tasks(void)
 
 
     if (telemetry_task == 0) {
-        tk_log(g_platform, "telemetry task create failed");
+        (void)tk_log_sync(g_platform, "telemetry task create failed");
         return -1;
     }
 
-    tk_log(g_platform, "telemetry task created");
-
-    TaskHandle_t status_task;
+    (void)tk_log_sync(g_platform, "telemetry task created");
 
     g_status_task_context.platform = g_platform;
 
@@ -160,15 +173,11 @@ static int tk_core_create_tasks(void)
     );
 
     if (status_task == 0) {
-        tk_log(g_platform, "status task create failed");
+        (void)tk_log_sync(g_platform, "status task create failed");
         return -1;
     }
 
-    tk_log(g_platform, "status task created");
+    (void)tk_log_sync(g_platform, "status task created");
 
     return 0;
-}
-
-uint64_t tk_core_runtime_ms(void){
-    return (uint64_t)xTaskGetTickCount() * (uint64_t)portTICK_PERIOD_MS;
 }

@@ -60,11 +60,11 @@ int main(void)
     usart2_init();
     tk_esp32_link_init();
 
-    usart2_write_string("tilekoumanto stm32 alive\r\n");
+    stm32_log("tilekoumanto stm32 alive");
 
     (void)tk_core_run(&platform);
 
-    usart2_write_string("tk_core_run returned unexpectedly\r\n");
+    stm32_log("tk_core_run returned unexpectedly");
 
     for (;;) {
     }
@@ -214,20 +214,10 @@ static int stm32_publish_telemetry(const tk_telemetry_t *telemetry)
     );
 
     if (length < 0) {
-        stm32_log("telemetry serialization failed");
         return -1;
     }
 
-    if (tk_esp32_link_send(payload) != 0) {
-        stm32_log("telemetry send failed");
-        return -1;
-    }
-
-    usart2_write_string("telemetry sent to ESP32:");
-    usart2_write_string(payload);
-    usart2_write_string("\r\n");
-
-    return 0;
+    return tk_esp32_link_send(payload);
 }
 
 static int stm32_should_stop(void)

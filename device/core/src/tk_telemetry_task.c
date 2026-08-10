@@ -4,6 +4,7 @@
 #include "tk_internal.h"
 #include "tk_platform.h"
 #include "tk_types.h"
+#include "tk_log.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -35,34 +36,6 @@ static uint64_t tk_elapsed_ticks_to_ms(
     return (uint64_t)elapsed_ticks * (uint64_t)portTICK_PERIOD_MS;
 }
 
-// static const char *tk_mains_power_to_string(tk_mains_power_state_t state)
-// {
-//     switch (state) {
-//     case TK_MAINS_POWER_PRESENT:
-//         return "present";
-//     case TK_MAINS_POWER_NOT_PRESENT:
-//         return "not_present";
-//     case TK_MAINS_POWER_FAULT:
-//         return "fault";
-//     default:
-//         return "unknown";
-//     }
-// }
-
-// static const char *tk_pump_relay_to_string(tk_pump_relay_state_t state)
-// {
-//     switch (state) {
-//     case TK_PUMP_RELAY_ACTIVE:
-//         return "active";
-//     case TK_PUMP_RELAY_INACTIVE:
-//         return "inactive";
-//     case TK_PUMP_RELAY_FAULT:
-//         return "fault";
-//     default:
-//         return "unknown";
-//     }
-// }
-
 static int tk_process_telemetry_once(const tk_platform_t *platform)
 {
     TickType_t current_tick;
@@ -74,22 +47,14 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
     }
 
     if (platform->read_telemetry == 0) {
-        tk_log(platform, "read_telemetry callback missing");
+        (void)tk_log_enqueue("read_telemetry callback missing");
         return -1;
     }
 
     if (platform->read_telemetry(&telemetry) != 0) {
-        tk_log(platform, "read_telemetry failed");
+        (void)tk_log_enqueue( "read_telemetry failed");
         return -1;
     }
-
-    // tk_log(
-    //     platform,
-    //     "mains:%s relay:%s time:%" PRIu64,
-    //     tk_mains_power_to_string(telemetry.mains_power),
-    //     tk_pump_relay_to_string(telemetry.pump_relay),
-    //     telemetry.unix_time_ms
-    // );
 
     current_tick = xTaskGetTickCount();
 
@@ -107,19 +72,18 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
             &telemetry,
             time_since_last_publish_ms
         )) {
-        // tk_log(platform, "publish_telemetry skipped");
         return 0;
     }
     
     telemetry.seq = g_next_telemetry_seq++;
 
     if (platform->publish_telemetry == 0) {
-        tk_log(platform, "publish_telemetry callback missing");
+        (void)tk_log_enqueue("publish_telemetry callback missing");
         return -1;
     }
 
     if (platform->publish_telemetry(&telemetry) != 0) {
-        tk_log(platform, "publish_telemetry failed");
+        (void)tk_log_enqueue("publish_telemetry failed");
         return -1;
     }
 
@@ -127,8 +91,7 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
     g_last_publish_tick = current_tick;
     g_has_last_published = 1;
 
-    tk_log(
-    platform,
+    (void)tk_log_enqueue(
     "publish_telemetry complete seq:%" PRIu32,
     telemetry.seq
 );
@@ -150,13 +113,13 @@ void tk_telemetry_task(void *argument)
 
     platform = context->platform;
 
-    tk_log(platform, "telemetry task started");
+    (void)tk_log_enqueue("telemetry task started");
 
     last_wake_tick = xTaskGetTickCount();
 
     for (;;) {
         if (tk_core_stop_requested()) {
-            tk_log(platform, "telemetry task stop requested");
+            (void)tk_log_enqueue("telemetry task stop requested");
             break;
         }
 
@@ -168,7 +131,7 @@ void tk_telemetry_task(void *argument)
         );
     }
 
-    tk_log(platform, "telemetry task complete");
+    (void)tk_log_enqueue("telemetry task complete");
     vTaskEndScheduler();
 
     for (;;) {

@@ -2,6 +2,7 @@
 
 #include "tk_status.h"
 #include "tk_internal.h"
+#include "tk_log.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -21,24 +22,24 @@ void tk_status_task(void *argument)
 
     platform = context->platform;
 
-    tk_log(platform, "status task started");
+    (void)tk_log_enqueue("status task started");
 
     for (;;) {
         if (tk_core_stop_requested()) {
-            tk_log(platform, "status task stop requested");
+            (void)tk_log_enqueue("status task stop requested");
             break;
         }
 
         if (platform->status_led_toggle != 0) {
             if (platform->status_led_toggle() != 0) {
-                tk_log(platform, "status led toggle failed");
+                (void)tk_log_enqueue("status led toggle failed");
             }
         }
 
         vTaskDelay(pdMS_TO_TICKS(TK_STATUS_TASK_PERIOD_MS));
     }
 
-    tk_log(platform, "status task complete");
+    (void)tk_log_enqueue("status task complete");
     vTaskEndScheduler();
 
     for (;;) {
