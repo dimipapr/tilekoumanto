@@ -15,9 +15,12 @@ The purpose of the architecture is to move these states from the field installat
 
 The MVP architecture consists of:
 
-- an STM32-based field device
 - external relay contacts for electrical state detection
-- MQTT communication over LTE
+- an STM32-based field proccessor
+- an ESP32 communications proccessor
+- a UART link between STM32 and ESP32
+- wifi connectivity from the ESP32
+- MQTT over mutual TLS
 - Mosquitto as the MQTT broker
 - Django as the backend/API
 - PostgreSQL as the database
@@ -28,21 +31,37 @@ For the MVP, the farmer-facing interface is the API. No separate web dashboard o
 
 ## 3. Field device
 
-The field device is based on STM32.
+The field device uses two processors with separate responsibilities.
 
-Its role is to read electrical state signals from the pump installation and publish them to the backend through MQTT over LTE.
+### 3.1 STM32 field processor
 
-The device does not directly measure three-phase mains voltage. Mains presence is detected through the contact of an external voltage monitoring relay.
+The STM32:
 
-The device does not directly measure pump motor current or hydraulic behavior. Pump state is detected through a relay contact that represents whether the pump is commanded or considered running by the electrical control circuit.
+- reads the mains-power and pump-relay input signals
+- creates the backend-facing telemetry payload
+- sends newline-delimited telemetry to the ESP32 over UART
+
+The STM32 does not connect directly to the MQTT broker.
+
+### 3.2 ESP32 communications processor
+
+The ESP32:
+
+- receives newline-delimited telemetry from the STM32
+- connects to the network over Wi-Fi
+- publishes telemetry to Mosquitto using MQTT over mutual TLS
+
+The ESP32 owns network communication. It does not own field-input interpretation or telemetry generation.
 
 ## 4. Field inputs
 
 ### 4.1 Mains power state
 
-Mains power state is detected through an external voltage monitoring relay contact.
+Mains power state is detected through an external voltage-monitoring relay contact.
 
 The STM32 reads this contact as a discrete input and treats it as the field signal for whether mains power is available at the installation.
+
+The device does not directly measure three-phase mains voltage.
 
 ### 4.2 Pump relay state
 
@@ -50,56 +69,59 @@ Pump state is detected through a relay contact from the pump control circuit.
 
 The STM32 reads this contact as a discrete input and treats it as the field signal for whether the pump relay is active.
 
+The device does not directly measure motor current or hydraulic behavior.
+
 ## 5. Communication
 
-The system has two separate communication channels:
+The system has three communication boundaries:
 
-- the field-device telemetry channel
-- the user-facing API channel
+- STM32-to-ESP32 telemetry over UART
+- ESP32-to-backend telemetry over MQTT/mTLS
+- user-to-backend access over HTTPS
 
-These channels do not overlap at the transport or protocol level. Their only shared point is the PostgreSQL database.
+For the MVP, telemetry communication is one-way from the field device to the backend. Remote control is not included.
 
-## 5.1 Field-device telemetry channel
+### 5.1 STM32-to-ESP32 link
 
-The field device communicates with the backend using MQTT over LTE.
+The STM32 sends backend-facing JSON telemetry to the ESP32 over UART.
 
-The device publishes field state updates to the MQTT broker. The backend consumes these messages and stores the reported state in PostgreSQL.
+Messages are newline-delimited. The ESP32 reconstructs complete messages before forwarding them.
 
-For the MVP, communication is one-way from the field device to the backend. Remote control is not included.
+UART acknowledgements, delivery retries, and offline buffering are deferred.
 
-Current MVP data path:
+### 5.2 ESP32-to-backend telemetry
+
+The ESP32 publishes telemetry over Wi-Fi using MQTT with mutual TLS.
+
+Current MVP telemetry path:
 
 ```text
-Field device
-→ MQTT over LTE with mTLS
+STM32
+→ UART
+→ ESP32
+→ Wi-Fi
+→ MQTT over mTLS
 → Mosquitto
-→ Django MQTT consumer
+→ Django MQTT ingestion
 → PostgreSQL
 ```
 
-## 5.2 MQTT transport security
+### 5.3 MQTT transport security
 
-MQTT communication between the field device and the backend uses TLS with mutual authentication.
+Each field device uses a client certificate issued by the project-controlled certificate authority.
 
-Each field device should have its own client certificate. The MQTT broker should only accept telemetry from devices that present a valid client certificate issued by the project-controlled certificate authority.
+Mutual TLS provides:
 
-mTLS is used to:
+* telemetry encryption in transit
+* broker identity validation by the device
+* device authentication by the broker
+* rejection of unknown clients
 
-- encrypt telemetry in transit
-- allow the field device to validate that it is connecting to the legitimate backend/broker
-- allow the MQTT broker to authenticate field devices
-- prevent unknown clients from publishing telemetry
-- support per-device certificate revocation later
-
-For local development, cleartext MQTT may be used inside the Docker Compose network, but this is not the production or field communication model.
-
-## 5.3 User-facing HTTPS channel
+### 5.4 User-facing HTTPS channel
 
 Users access the backend API over HTTPS through Caddy.
 
-This channel is used for viewing the latest known device state and any future farmer-facing interactions.
-
-Current MVP user-facing data path:
+Current MVP user-facing path:
 
 ```text
 User / API client
@@ -109,80 +131,79 @@ User / API client
 → PostgreSQL
 ```
 
-## 5.4 Channel separation
+### 6. Backend
 
-The field-device MQTT channel and the user-facing HTTPS channel are separate.
+The backend consists of:
 
-The MQTT channel writes reported device state into PostgreSQL.
+* Mosquitto for MQTT message handling
+* Django for telemetry ingestion, application logic, and the API
+* PostgreSQL for persistent storage
+* Caddy as the HTTPS entrypoint and reverse proxy
 
-The HTTPS API channel reads the latest known device state from PostgreSQL and returns it to the user.
+Django validates incoming telemetry, stores the reported field state, and exposes the latest known state through the API.
 
-The database is the only intersection between the two channels.
+### 7. Data storage
 
-## 6. Backend
+PostgreSQL stores:
 
-The backend stack consists of:
+* device identity
+* backend receive time
+* device-reported time when available
+* mains power state
+* pump relay state
 
-- Mosquitto for MQTT message handling
-- Django for application logic and API
-- PostgreSQL for persistent storage
-- Caddy as the HTTP entrypoint and reverse proxy
+The backend exposes the latest known state for a device through the API.
 
-Django is responsible for exposing the current system state through an API and storing received field state information in PostgreSQL.
-
-## 7. Data storage
-
-PostgreSQL stores the reported field state.
-
-At minimum, the MVP needs to store:
-
-- device identity
-- timestamp of reported state
-- mains power state
-- pump relay state
-
-The backend should be able to expose the latest known state for a device through the API.
-
-## 8. Farmer-facing interface
+### 8. Farmer-facing interface
 
 For the MVP, the farmer-facing interface is the API.
 
-The API should make the latest known field state available, including:
+The API exposes:
 
-- whether mains power is available
-- whether the pump relay is active
-- when the state was last updated
+* whether mains power is available
+* whether the pump relay is active
+* when the latest state was received
 
-A separate frontend can be added later, but is not part of the MVP architecture.
+The existing /devices page is operator/developer tooling. It is not a separate farmer-facing dashboard.
 
-## 9. Deployment
+### 9. Deployment
 
-The current deployment target is a local machine using Docker Compose.
-
-The stack is intended to be transferable to a VPS without major architectural changes.
+The current backend deployment target is a local machine using Docker Compose.
 
 The local deployment includes:
 
-- Caddy
-- Django
-- PostgreSQL
-- Mosquitto
+* Caddy
+* Django web API
+* Django MQTT ingestion
+* PostgreSQL
+* Mosquitto
 
-## 10. MVP data flow
+The backend stack is intended to be transferable to a VPS without a major architecture change.
+
+### 10. MVP data flow
 
 ```text
 Field installation
 → relay contacts
-→ STM32 field device
-→ MQTT over LTE
+→ STM32
+→ UART
+→ ESP32
+→ Wi-Fi
+→ MQTT over mTLS
 → Mosquitto
-→ Django backend
+→ Django ingestion
 → PostgreSQL
-→ API
+→ Django API
 ```
 
-## Device subsystem
+### 11. Deferred architecture
 
-The device-side implementation is split into a shared C core and pluggable targets.
+The following are not part of the current MVP architecture:
 
-Detailed device architecture is documented in `09-device-subsystem.md`.
+Ethernet connectivity
+cellular connectivity
+remote pump control
+pressure monitoring
+production credential provisioning and private-key protection
+
+Detailed device hardware and software architecture is documented in 09-device-subsystem.md.
