@@ -4,7 +4,8 @@
 
 #include "tk_telemetry_json.h"
 
-static void test_serializes_telemetry(void){
+static void test_serializes_telemetry(void)
+{
     const tk_telemetry_t telemetry = {
         .mains_power = TK_MAINS_POWER_PRESENT,
         .pump_relay = TK_PUMP_RELAY_INACTIVE,
@@ -32,7 +33,8 @@ static void test_serializes_telemetry(void){
     assert(strcmp(output, expected) == 0);
 }
 
-static void test_serializes_fault_states(void){
+static void test_serializes_fault_states(void)
+{
     const tk_telemetry_t telemetry = {
         .mains_power = TK_MAINS_POWER_FAULT,
         .pump_relay = TK_PUMP_RELAY_FAULT,
@@ -59,7 +61,8 @@ static void test_serializes_fault_states(void){
     assert(strcmp(output, expected) == 0);
 }
 
-static void test_rejects_invalid_arguments(void){
+static void test_rejects_invalid_arguments(void)
+{
     const tk_telemetry_t telemetry = {
         .mains_power = TK_MAINS_POWER_PRESENT,
         .pump_relay = TK_PUMP_RELAY_ACTIVE,
@@ -94,7 +97,8 @@ static void test_rejects_invalid_arguments(void){
     );
 }
 
-static void test_rejects_truncated_output(void){
+static void test_rejects_truncated_output(void)
+{
     const tk_telemetry_t telemetry = {
         .mains_power = TK_MAINS_POWER_PRESENT,
         .pump_relay = TK_PUMP_RELAY_ACTIVE,
@@ -113,11 +117,75 @@ static void test_rejects_truncated_output(void){
     );
 }
 
-int main(void){
+static void test_rejects_invalid_states(void)
+{
+    tk_telemetry_t telemetry = {
+        .mains_power = TK_MAINS_POWER_PRESENT,
+        .pump_relay = TK_PUMP_RELAY_ACTIVE,
+        .unix_time_ms = 0U,
+        .seq = 0U,
+    };
+
+    char output[256];
+
+    telemetry.mains_power = (tk_mains_power_state_t)99;
+
+    assert(
+        tk_telemetry_json_serialize(
+            &telemetry,
+            output,
+            sizeof(output)
+        ) == -1
+    );
+
+    telemetry.mains_power = TK_MAINS_POWER_PRESENT;
+    telemetry.pump_relay = (tk_pump_relay_state_t)99;
+
+    assert(
+        tk_telemetry_json_serialize(
+            &telemetry,
+            output,
+            sizeof(output)
+        ) == -1
+    );
+}
+
+static void test_accepts_exact_output_capacity(void)
+{
+    const tk_telemetry_t telemetry = {
+        .mains_power = TK_MAINS_POWER_PRESENT,
+        .pump_relay = TK_PUMP_RELAY_ACTIVE,
+        .unix_time_ms = 0U,
+        .seq = 0U,
+    };
+
+    static const char expected[] =
+        "{\"meta\":{\"unix_time_ms\":0,\"seq\":0},"
+        "\"payload\":{\"readings\":{"
+        "\"mains_power\":\"present\","
+        "\"pump_relay\":\"active\"},"
+        "\"faults\":[]}}";
+
+    char output[sizeof(expected)];
+
+    int length = tk_telemetry_json_serialize(
+        &telemetry,
+        output,
+        sizeof(output)
+    );
+
+    assert(length == (int)(sizeof(expected) - 1U));
+    assert(strcmp(output, expected) == 0);
+}
+
+int main(void)
+{
     test_serializes_telemetry();
     test_serializes_fault_states();
     test_rejects_invalid_arguments();
     test_rejects_truncated_output();
+    test_rejects_invalid_states();
+    test_accepts_exact_output_capacity();
 
     return 0;
 }

@@ -7,14 +7,12 @@ static const char *mains_power_to_string(tk_mains_power_state_t state){
     switch (state){
         case TK_MAINS_POWER_PRESENT:
             return "present";
-            break;
         case TK_MAINS_POWER_NOT_PRESENT:
             return "not_present";
-            break;
         case TK_MAINS_POWER_FAULT:
-        default:
             return "fault";
-            break;
+        default:
+            return NULL;
     }
 }
 
@@ -23,14 +21,12 @@ static const char *pump_relay_to_string(tk_pump_relay_state_t state){
     {
     case TK_PUMP_RELAY_ACTIVE:
         return "active";
-        break;
     case TK_PUMP_RELAY_INACTIVE:
         return "inactive";
-        break;
     case TK_PUMP_RELAY_FAULT:
-    default:
         return "fault";
-        break;
+    default:
+        return NULL;
     }
 }
 
@@ -39,6 +35,10 @@ int tk_telemetry_json_serialize(
     char *output,
     size_t output_capacity
 ){
+
+    const char *mains_power;
+    const char *pump_relay;
+
     if (
         telemetry == NULL ||
         output == NULL ||
@@ -46,6 +46,11 @@ int tk_telemetry_json_serialize(
     ){
         return -1;
     }
+
+    mains_power = mains_power_to_string(telemetry->mains_power);
+    pump_relay = pump_relay_to_string(telemetry->pump_relay);
+
+    if (mains_power == NULL || pump_relay == NULL)return -1;
 
     int length = snprintf(
         output,
