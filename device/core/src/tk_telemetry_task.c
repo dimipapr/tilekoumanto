@@ -56,6 +56,7 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
     }
 
     telemetry.input_state = input_state;
+    telemetry.runtime_ms = tk_runtime_ms();
 
     if (platform->get_unix_time_ms == 0){
         (void)tk_log_enqueue(

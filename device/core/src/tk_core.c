@@ -36,6 +36,8 @@ static StackType_t g_status_task_stack[TK_STATUS_TASK_STACK_WORDS];
 static int tk_core_setup(const tk_platform_t *platform);
 static int tk_core_create_tasks(void);
 
+
+
 int tk_core_stop_requested(void){
     if (g_platform == 0 || g_platform->should_stop == 0)return 0;
     return g_platform->should_stop() != 0;
@@ -104,8 +106,26 @@ int tk_core_run(const tk_platform_t *platform)
     return -1;
 }
 
-uint64_t tk_core_runtime_ms(void){
-    return (uint64_t)xTaskGetTickCount() * (uint64_t)portTICK_PERIOD_MS;
+static int g_runtime_initialized = 0;
+static TickType_t g_last_runtime_tick = 0;
+static uint64_t g_runtime_ticks = 0U;
+
+uint64_t tk_runtime_ms(void)
+{
+    const TickType_t current_tick = xTaskGetTickCount();
+
+    if (g_runtime_initialized == 0) {
+        g_runtime_ticks = (uint64_t)current_tick;
+        g_runtime_initialized = 1;
+    } else {
+        g_runtime_ticks += (uint64_t)(TickType_t)(
+            current_tick - g_last_runtime_tick
+        );
+    }
+
+    g_last_runtime_tick = current_tick;
+
+    return g_runtime_ticks * (uint64_t)portTICK_PERIOD_MS;
 }
 
 static int tk_core_create_tasks(void)

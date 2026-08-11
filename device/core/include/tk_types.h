@@ -32,6 +32,7 @@ typedef struct {
     tk_input_state_t input_state;
     tk_wall_time_state_t wall_time_state;
     uint64_t unix_time_ms;
+    uint64_t runtime_ms;
     uint32_t seq;
 }tk_telemetry_t;
 

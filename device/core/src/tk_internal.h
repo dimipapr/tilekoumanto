@@ -24,4 +24,6 @@ void tk_log_task(void *argument);
 void tk_telemetry_task(void *argument);
 void tk_status_task(void *argument);
 
+uint64_t tk_runtime_ms(void);
+
 #endif
