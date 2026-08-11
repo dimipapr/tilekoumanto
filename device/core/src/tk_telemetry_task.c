@@ -3,6 +3,7 @@
 #include "tk_internal.h"
 #include "tk_log.h"
 #include "tk_telemetry.h"
+#include "tk_telemetry_json.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -11,6 +12,7 @@
 #include <stdint.h>
 
 #define TK_TELEMETRY_TASK_PERIOD_MS 1000U
+#define TK_TELEMETRY_PAYLOAD_SIZE 256U
 
 static int g_has_last_published = 0;
 static tk_telemetry_t g_last_published;
@@ -32,6 +34,8 @@ static uint64_t tk_elapsed_ticks_to_ms(
 
 static int tk_process_telemetry_once(const tk_platform_t *platform)
 {
+    char payload[TK_TELEMETRY_PAYLOAD_SIZE];
+    int payload_length;
     tk_input_state_t input_state;
     tk_telemetry_t telemetry = {0};
     TickType_t current_tick;
@@ -99,12 +103,25 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
     
     telemetry.seq = g_next_telemetry_seq++;
 
-    if (platform->publish_telemetry == 0) {
-        (void)tk_log_enqueue("publish_telemetry callback missing");
+    payload_length = tk_telemetry_json_serialize(
+        &telemetry,
+        payload,
+        sizeof(payload)
+    );
+
+    if (payload_length < 0){
+        (void)tk_log_enqueue("telemetry serialization failed");
         return -1;
     }
 
-    if (platform->publish_telemetry(&telemetry) != 0) {
+    if(platform->publish_telemetry == 0){
+        (void)tk_log_enqueue(
+            "publish telemetry callback missing"
+        );
+        return -1;
+    }
+
+    if (platform->publish_telemetry(payload) != 0){
         (void)tk_log_enqueue("publish_telemetry failed");
         return -1;
     }

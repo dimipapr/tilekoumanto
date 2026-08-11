@@ -11,7 +11,6 @@
 #include "tk_core.h"
 #include "tk_esp32_link.h"
 #include "tk_platform.h"
-#include "tk_telemetry_json.h"
 #include "tk_types.h"
 
 #define LED_GPIO_PORT GPIOA
@@ -27,8 +26,6 @@
 #define USART2_TX_PIN LL_GPIO_PIN_2
 #define USART2_BAUDRATE 115200U
 
-#define TELEMETRY_PAYLOAD_SIZE 256
-
 static void clock_init(void);
 static void led_init(void);
 static void inputs_init(void);
@@ -39,7 +36,7 @@ static void usart2_write_string(const char *text);
 static void stm32_log(const char *message);
 static tk_wall_time_state_t stm32_get_unix_time_ms(uint64_t *out);
 static int stm32_read_inputs(tk_input_state_t *out);
-static int stm32_publish_telemetry(const tk_telemetry_t *telemetry);
+static int stm32_publish_telemetry(const char *payload);
 static int stm32_should_stop(void);
 static int stm32_status_led_toggle(void);
 
@@ -216,20 +213,11 @@ static int stm32_read_inputs(
     return 0;
 }
 
-static int stm32_publish_telemetry(const tk_telemetry_t *telemetry)
+static int stm32_publish_telemetry(const char *payload)
 {
-    char payload[TELEMETRY_PAYLOAD_SIZE];
-
-    int length = tk_telemetry_json_serialize(
-        telemetry,
-        payload,
-        sizeof(payload)
-    );
-
-    if (length < 0) {
+    if (payload == 0){
         return -1;
     }
-
     return tk_esp32_link_send(payload);
 }
 
