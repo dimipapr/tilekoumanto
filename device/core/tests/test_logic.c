@@ -1,7 +1,6 @@
 // device/core/tests/test_logic.c
 
 #include "tk_telemetry.h"
-#include "tk_types.h"
 
 #include <stdio.h>
 
@@ -26,8 +25,11 @@ static tk_telemetry_t make_telemetry(
 )
 {
     const tk_telemetry_t telemetry = {
-        .mains_power = mains_power,
-        .pump_relay = pump_relay,
+        .input_state = {
+            .mains_power = mains_power,
+            .pump_relay = pump_relay,
+        },
+        .wall_time_state = TK_WALL_TIME_UNSYNCED,
         .unix_time_ms = 0U,
         .seq = 0U,
     };

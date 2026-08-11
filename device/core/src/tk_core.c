@@ -69,8 +69,8 @@ int tk_core_version(void)
 static int tk_core_setup(const tk_platform_t *platform){
     if (platform == 0)                      return -1;
     if (platform->log == 0)                 return -1;
-    if (platform->unix_time_ms == 0)        return -1;
-    if (platform->read_telemetry == 0)      return -1;
+    if (platform->get_unix_time_ms == 0)        return -1;
+    if (platform->read_inputs == 0)      return -1;
     if (platform->publish_telemetry == 0)   return -1;
 
     g_platform = platform;

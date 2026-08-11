@@ -37,16 +37,16 @@ static void usart2_write_char(char ch);
 static void usart2_write_string(const char *text);
 
 static void stm32_log(const char *message);
-static uint64_t stm32_unix_time_ms(void);
-static int stm32_read_telemetry(tk_telemetry_t *out);
+static tk_wall_time_state_t stm32_get_unix_time_ms(uint64_t *out);
+static int stm32_read_inputs(tk_input_state_t *out);
 static int stm32_publish_telemetry(const tk_telemetry_t *telemetry);
 static int stm32_should_stop(void);
 static int stm32_status_led_toggle(void);
 
 static const tk_platform_t platform = {
     .log = stm32_log,
-    .unix_time_ms = stm32_unix_time_ms,
-    .read_telemetry = stm32_read_telemetry,
+    .read_inputs = stm32_read_inputs,
+    .get_unix_time_ms = stm32_get_unix_time_ms,
     .publish_telemetry = stm32_publish_telemetry,
     .should_stop = stm32_should_stop,
     .status_led_toggle = stm32_status_led_toggle
@@ -176,29 +176,42 @@ static void stm32_log(const char *message)
     usart2_write_string("\r\n");
 }
 
-static uint64_t stm32_unix_time_ms(void)
+static tk_wall_time_state_t stm32_get_unix_time_ms(
+    uint64_t *out
+)
 {
-    return (uint64_t)tk_core_runtime_ms();
+    if (out == 0) {
+        return TK_WALL_TIME_FAULT;
+    }
+
+    *out = 0U;
+
+    return TK_WALL_TIME_UNSYNCED;
 }
 
-static int stm32_read_telemetry(tk_telemetry_t *out)
+static int stm32_read_inputs(
+    tk_input_state_t *out
+)
 {
     if (out == 0) {
         return -1;
     }
 
     out->mains_power =
-        LL_GPIO_IsInputPinSet(MAINS_STATUS_GPIO_PORT, MAINS_STATUS_PIN)
+        LL_GPIO_IsInputPinSet(
+            MAINS_STATUS_GPIO_PORT,
+            MAINS_STATUS_PIN
+        )
             ? TK_MAINS_POWER_NOT_PRESENT
             : TK_MAINS_POWER_PRESENT;
 
     out->pump_relay =
-        LL_GPIO_IsInputPinSet(PUMP_STATUS_GPIO_PORT, PUMP_STATUS_PIN)
+        LL_GPIO_IsInputPinSet(
+            PUMP_STATUS_GPIO_PORT,
+            PUMP_STATUS_PIN
+        )
             ? TK_PUMP_RELAY_INACTIVE
             : TK_PUMP_RELAY_ACTIVE;
-
-    out->unix_time_ms = stm32_unix_time_ms();
-    out->seq = 0;
 
     return 0;
 }

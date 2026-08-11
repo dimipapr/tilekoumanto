@@ -1,7 +1,6 @@
 // device/core/src/tk_telemetry.c
 
 #include "tk_telemetry.h"
-#include "tk_types.h"
 
 #include <stdint.h>
 
@@ -21,11 +20,11 @@ int tk_should_publish_telemetry(
         return 1;
     }
 
-    if (last_published->mains_power != current->mains_power) {
+    if (last_published->input_state.mains_power != current->input_state.mains_power) {
         return 1;
     }
 
-    if (last_published->pump_relay != current->pump_relay) {
+    if (last_published->input_state.pump_relay != current->input_state.pump_relay) {
         return 1;
     }
 

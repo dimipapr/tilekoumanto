@@ -1,10 +1,8 @@
 // device/core/src/tk_telemetry_task.c
 
-#include "tk_telemetry.h"
 #include "tk_internal.h"
-#include "tk_platform.h"
-#include "tk_types.h"
 #include "tk_log.h"
+#include "tk_telemetry.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -17,10 +15,8 @@
 static int g_has_last_published = 0;
 static tk_telemetry_t g_last_published;
 static TickType_t g_last_publish_tick = 0;
-static uint32_t g_next_telemetry_seq = 1;
+static uint32_t g_next_telemetry_seq = 1U;
 
-// static const char *tk_mains_power_to_string(tk_mains_power_state_t state);
-// static const char *tk_pump_relay_to_string(tk_pump_relay_state_t state);
 static int tk_process_telemetry_once(const tk_platform_t *platform);
 static uint64_t tk_elapsed_ticks_to_ms(TickType_t start_tick, TickType_t end_tick);
 
@@ -29,31 +25,57 @@ static uint64_t tk_elapsed_ticks_to_ms(
     TickType_t end_tick
 )
 {
-    TickType_t elapsed_ticks;
-
-    elapsed_ticks = end_tick - start_tick;
+    const TickType_t elapsed_ticks = end_tick - start_tick;
 
     return (uint64_t)elapsed_ticks * (uint64_t)portTICK_PERIOD_MS;
 }
 
 static int tk_process_telemetry_once(const tk_platform_t *platform)
 {
+    tk_input_state_t input_state;
+    tk_telemetry_t telemetry = {0};
     TickType_t current_tick;
     uint64_t time_since_last_publish_ms;
-    tk_telemetry_t telemetry = {0};
 
     if (platform == 0) {
         return -1;
     }
 
-    if (platform->read_telemetry == 0) {
-        (void)tk_log_enqueue("read_telemetry callback missing");
+    if (platform->read_inputs == 0) {
+        (void)tk_log_enqueue("read_inputs callback missing");
         return -1;
     }
 
-    if (platform->read_telemetry(&telemetry) != 0) {
-        (void)tk_log_enqueue( "read_telemetry failed");
+    if (platform->read_inputs(&input_state) != 0) {
+        (void)tk_log_enqueue( "read_inputs failed");
         return -1;
+    }
+
+    telemetry.input_state = input_state;
+
+    if (platform->get_unix_time_ms == 0){
+        (void)tk_log_enqueue(
+            "get_unix_time_ms callback missing"
+        );
+        return -1;
+    }
+
+    telemetry.wall_time_state = 
+        platform->get_unix_time_ms(
+            &telemetry.unix_time_ms
+        );
+
+    switch(telemetry.wall_time_state){
+        case TK_WALL_TIME_SYNCED:
+            break;
+        case TK_WALL_TIME_UNSYNCED:
+        case TK_WALL_TIME_FAULT:
+            telemetry.unix_time_ms = 0U;
+            break;
+        default:
+            telemetry.wall_time_state = TK_WALL_TIME_FAULT;
+            telemetry.unix_time_ms = 0U;
+            break;
     }
 
     current_tick = xTaskGetTickCount();
@@ -64,7 +86,7 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
             current_tick
         );
     } else {
-        time_since_last_publish_ms = 0;
+        time_since_last_publish_ms = 0U;
     }
 
     if (!tk_should_publish_telemetry(
@@ -92,9 +114,9 @@ static int tk_process_telemetry_once(const tk_platform_t *platform)
     g_has_last_published = 1;
 
     (void)tk_log_enqueue(
-    "publish_telemetry complete seq:%" PRIu32,
-    telemetry.seq
-);
+        "publish_telemetry complete seq:%" PRIu32,
+        telemetry.seq
+    );
 
     return 0;
 }

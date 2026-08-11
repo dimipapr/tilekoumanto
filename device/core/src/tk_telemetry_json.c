@@ -38,6 +38,7 @@ int tk_telemetry_json_serialize(
 
     const char *mains_power;
     const char *pump_relay;
+    int length;
 
     if (
         telemetry == NULL ||
@@ -47,12 +48,12 @@ int tk_telemetry_json_serialize(
         return -1;
     }
 
-    mains_power = mains_power_to_string(telemetry->mains_power);
-    pump_relay = pump_relay_to_string(telemetry->pump_relay);
+    mains_power = mains_power_to_string(telemetry->input_state.mains_power);
+    pump_relay = pump_relay_to_string(telemetry->input_state.pump_relay);
 
     if (mains_power == NULL || pump_relay == NULL)return -1;
 
-    int length = snprintf(
+    length = snprintf(
         output,
         output_capacity,
         "{\"meta\":{\"unix_time_ms\":%" PRIu64
@@ -63,8 +64,8 @@ int tk_telemetry_json_serialize(
         "\"faults\":[]}}",
         telemetry->unix_time_ms,
         telemetry->seq,
-        mains_power_to_string(telemetry->mains_power),
-        pump_relay_to_string(telemetry->pump_relay)
+        mains_power,
+        pump_relay
     );
 
     if (length < 0 || (size_t)length >= output_capacity){

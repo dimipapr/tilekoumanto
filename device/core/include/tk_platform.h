@@ -9,12 +9,10 @@
 
 typedef struct {
     void (*log)(const char *message);
-    uint64_t (*unix_time_ms)(void);
-
-    int (*read_telemetry)(tk_telemetry_t *out);
-    int (*publish_telemetry)(const tk_telemetry_t *tk_telemetry);
+    int (*read_inputs)(tk_input_state_t *out);
+    tk_wall_time_state_t (*get_unix_time_ms)(uint64_t *out);
+    int (*publish_telemetry)(const tk_telemetry_t *telemetry);
     int (*should_stop)(void);
-
     int (*status_led_toggle)(void);
 } tk_platform_t;
 
