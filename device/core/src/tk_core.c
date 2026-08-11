@@ -3,7 +3,6 @@
 #include "tk_core.h"
 #include "tk_internal.h"
 #include "tk_log.h"
-#include "tk_status.h"
 #include "tk_telemetry.h"
 
 #include "FreeRTOS.h"

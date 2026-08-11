@@ -1,6 +1,5 @@
 // device/core/src/tk_status_task.c
 
-#include "tk_status.h"
 #include "tk_internal.h"
 #include "tk_log.h"
 
