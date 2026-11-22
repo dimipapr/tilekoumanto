@@ -1,1 +1,0 @@
-# backend/django/devices/migrations/__init__.py
